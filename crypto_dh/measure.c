@@ -2,15 +2,7 @@
 #include "randombytes.h"
 #include "cpucycles.h"
 #include "crypto_dh.h"
-
-extern void printentry(long long,const char *,long long *,long long);
-extern unsigned char *alignedcalloc(unsigned long long);
-extern const char *primitiveimplementation;
-extern const char *implementationversion;
-extern const char *sizenames[];
-extern const long long sizes[];
-extern void allocate(void);
-extern void measure(void);
+#include "measure.h"
 
 const char *primitiveimplementation = crypto_dh_IMPLEMENTATION;
 const char *implementationversion = crypto_dh_VERSION;
@@ -43,6 +35,8 @@ void allocate(void)
 
 #define TIMINGS 63
 static long long cycles[TIMINGS + 1];
+static long long rbytes[TIMINGS + 1];
+static long long rcalls[TIMINGS + 1];
 
 void measure(void)
 {
@@ -52,16 +46,28 @@ void measure(void)
   for (loop = 0;loop < LOOPS;++loop) {
     for (i = 0;i <= TIMINGS;++i) {
       cycles[i] = cpucycles();
+      rbytes[i] = randombytes_bytes;
+      rcalls[i] = randombytes_calls;
       crypto_dh_keypair(pk1,sk1);
     }
     for (i = 0;i < TIMINGS;++i) cycles[i] = cycles[i + 1] - cycles[i];
+    for (i = 0;i < TIMINGS;++i) rbytes[i] = rbytes[i + 1] - rbytes[i];
+    for (i = 0;i < TIMINGS;++i) rcalls[i] = rcalls[i + 1] - rcalls[i];
     printentry(-1,"keypair_cycles",cycles,TIMINGS);
+    printentry(-1,"keypair_randombytes",rbytes,TIMINGS);
+    printentry(-1,"keypair_randomcalls",rcalls,TIMINGS);
     crypto_dh_keypair(pk2,sk2);
     for (i = 0;i <= TIMINGS;++i) {
       cycles[i] = cpucycles();
+      rbytes[i] = randombytes_bytes;
+      rcalls[i] = randombytes_calls;
       crypto_dh(s1,pk2,sk1);
     }
     for (i = 0;i < TIMINGS;++i) cycles[i] = cycles[i + 1] - cycles[i];
+    for (i = 0;i < TIMINGS;++i) rbytes[i] = rbytes[i + 1] - rbytes[i];
+    for (i = 0;i < TIMINGS;++i) rcalls[i] = rcalls[i + 1] - rcalls[i];
     printentry(-1,"cycles",cycles,TIMINGS);
+    printentry(-1,"randombytes",rbytes,TIMINGS);
+    printentry(-1,"randomcalls",rcalls,TIMINGS);
   }
 }

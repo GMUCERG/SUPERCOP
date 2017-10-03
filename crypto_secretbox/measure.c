@@ -1,16 +1,8 @@
 #include <stdlib.h>
-#include "randombytes.h"
+#include "kernelrandombytes.h"
 #include "cpucycles.h"
 #include "crypto_secretbox.h"
-
-extern void printentry(long long,const char *,long long *,long long);
-extern unsigned char *alignedcalloc(unsigned long long);
-extern const char *primitiveimplementation;
-extern const char *implementationversion;
-extern const char *sizenames[];
-extern const long long sizes[];
-extern void allocate(void);
-extern void measure(void);
+#include "measure.h"
 
 const char *primitiveimplementation = crypto_secretbox_IMPLEMENTATION;
 const char *implementationversion = crypto_secretbox_VERSION;
@@ -47,10 +39,10 @@ void measure(void)
 
   for (loop = 0;loop < LOOPS;++loop) {
     for (mlen = 0;mlen <= MAXTEST_BYTES;mlen += 1 + mlen / 8) {
-      randombytes(k,crypto_secretbox_KEYBYTES);
-      randombytes(n,crypto_secretbox_NONCEBYTES);
-      randombytes(m + crypto_secretbox_ZEROBYTES,mlen);
-      randombytes(c,mlen + crypto_secretbox_ZEROBYTES);
+      kernelrandombytes(k,crypto_secretbox_KEYBYTES);
+      kernelrandombytes(n,crypto_secretbox_NONCEBYTES);
+      kernelrandombytes(m + crypto_secretbox_ZEROBYTES,mlen);
+      kernelrandombytes(c,mlen + crypto_secretbox_ZEROBYTES);
       for (i = 0;i <= TIMINGS;++i) {
         cycles[i] = cpucycles();
 	crypto_secretbox(c,m,mlen + crypto_secretbox_ZEROBYTES,n,k);

@@ -1,5 +1,5 @@
 # 
-#  lex_ultrasparc/ECRYPT_ivsetup.s version 20080315
+#  lex_ultrasparc/crypto_stream_lexv2_e_v2_schwabe_sparc_1_ECRYPT_ivsetup.s version 20080315
 #  Peter Schwabe
 #  Public domain
 # 
@@ -175,11 +175,11 @@
 
 # qhasm: stack64 x43
 
-# qhasm: enter ECRYPT_ivsetup
+# qhasm: enter crypto_stream_lexv2_e_v2_schwabe_sparc_1_ECRYPT_ivsetup
 .section ".text"
 .align 32
-.global ECRYPT_ivsetup
-ECRYPT_ivsetup:
+.global crypto_stream_lexv2_e_v2_schwabe_sparc_1_ECRYPT_ivsetup
+crypto_stream_lexv2_e_v2_schwabe_sparc_1_ECRYPT_ivsetup:
 save %sp,-528,%sp
 
 # qhasm: constants = (aes_big_constants & 0xfffffc0000000000) >> 32

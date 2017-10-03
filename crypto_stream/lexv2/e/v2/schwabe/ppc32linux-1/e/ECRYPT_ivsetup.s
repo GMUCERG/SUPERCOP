@@ -317,13 +317,13 @@
 
 # qhasm: stack32 i29_stack
 
-# qhasm: enter ECRYPT_ivsetup_qhasm
+# qhasm: enter crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_ivsetup_qhasm
 .text
 .align 3
-.globl _ECRYPT_ivsetup_qhasm
-.globl ECRYPT_ivsetup_qhasm
-_ECRYPT_ivsetup_qhasm:
-ECRYPT_ivsetup_qhasm:
+.globl _crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_ivsetup_qhasm
+.globl crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_ivsetup_qhasm
+_crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_ivsetup_qhasm:
+crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_ivsetup_qhasm:
 stwu 1,-384(1)
 
 # qhasm: i12_stack = i12

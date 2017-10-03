@@ -65,7 +65,7 @@
 #define HS1_SIV_NH_LEN      64
 #define HS1_SIV_HASH_RNDS    6
 #define HS1_SIV_CHACHA_RNDS 20
-#define HS1_SIV_SIV_LEN     CRYPTO_ABYTES
+#define HS1_SIV_SIV_LEN     32
 #endif
 
 #define __STDC_LIMIT_MACROS

@@ -1,4 +1,5 @@
 #include "crypto_verify.h"
+#include "measure.h"
 
 const char *primitiveimplementation = crypto_verify_IMPLEMENTATION;
 const char *implementationversion = crypto_verify_VERSION;

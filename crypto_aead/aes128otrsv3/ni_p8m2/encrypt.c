@@ -25,26 +25,25 @@
 *export and import control laws, which govern the usage of the Software.
 */
 
-/* AES-OTR v3, AES-NI with doubling routine from original OCB method*/
+/* AES-OTR v3 using AESNI */
 
 #include "crypto_aead.h" /* for SUPERCOP */
 #include <string.h>// memset, memcmp
-#include <wmmintrin.h>
-#include <tmmintrin.h>// _mm_shuffle_epi8
-#include <smmintrin.h>// _mm_extract_epi8
 #include "api.h"
 #include "otr.h"
-
+#ifdef DOUBLING_TABLE 
+#include "doubling.h"
+#endif 
 /*
 ** defines
 */
 #define ROUND   (CRYPTO_KEYBYTES==16?10:14)
 #define EK_SZ (ROUND+1) 
-#define le(b) _mm_shuffle_epi8(b,_mm_set_epi8(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)) /*LE conversion*/
+#define le(b) _mm_shuffle_epi8(b,_mm_set_epi8(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)) /*Byte order conversion*/
+
 /*
-** internal variables
+** global variable
 */
-block Q;
 block encrypt_key[EK_SZ];
 
 /*
@@ -66,11 +65,11 @@ block encrypt_key[EK_SZ];
 */
 __inline__ static void AES_256_Key_Expansion(
 	const unsigned char *userKey,
-	__m128i *key)
+	block *key)
 {
-	__m128i x0, x1, x2, x3, *kp = key;
-	kp[0] = x0 = _mm_loadu_si128((__m128i*)userKey);
-	kp[1] = x3 = _mm_loadu_si128((__m128i*)(userKey + 16));
+	block x0, x1, x2, x3, *kp = key;
+	kp[0] = x0 = _mm_loadu_si128((block*)userKey);
+	kp[1] = x3 = _mm_loadu_si128((block*)(userKey + 16));
 	x2 = _mm_setzero_si128();
 	EXPAND_ASSIST(x0, x1, x2, x3, 255, 1);  kp[2] = x0;
 	EXPAND_ASSIST(x3, x1, x2, x0, 170, 1);  kp[3] = x3;
@@ -89,13 +88,13 @@ __inline__ static void AES_256_Key_Expansion(
 /*
 ** AES-128 key schedule
 */
-static void AES_128_Key_Expansion(
+__inline__ static void AES_128_Key_Expansion(
 	const unsigned char *userkey,
-	void *key)
+	block *key)
 {
-	__m128i x0, x1, x2;
-	__m128i *kp = (__m128i *)key;
-	kp[0] = x0 = _mm_loadu_si128((__m128i*)userkey);
+	block x0, x1, x2;
+	block *kp = (block *)key;
+	kp[0] = x0 = _mm_loadu_si128((block*)userkey);
 	x2 = _mm_setzero_si128();
 	EXPAND_ASSIST(x0, x1, x2, x0, 255, 1);   kp[1] = x0;
 	EXPAND_ASSIST(x0, x1, x2, x0, 255, 2);   kp[2] = x0;
@@ -112,11 +111,11 @@ static void AES_128_Key_Expansion(
 ** AES-128/256 encrypt
 */
 __inline__ static void AES_encrypt(
-	__m128i in,
-	__m128i *out,
-	const __m128i *key)
+	block in,
+	block *out,
+	const block	*key)
 {
-	__m128i tmp = _mm_load_si128(&in);
+	block tmp = _mm_load_si128(&in);
 	tmp = _mm_xor_si128(tmp, key[0]);
 	tmp = _mm_aesenc_si128(tmp, key[1]);
 	tmp = _mm_aesenc_si128(tmp, key[2]);
@@ -138,11 +137,51 @@ __inline__ static void AES_encrypt(
 #endif
 }
 /*
+** AES-128/256 encrypt for two blocks
+*/
+__inline__ static void AES_ecb_encrypt_2(
+	block *blks,
+	const block *key)
+{
+	unsigned j;
+	blks[0] = _mm_xor_si128(blks[0], key[0]);
+	blks[1] = _mm_xor_si128(blks[1], key[0]);
+	for (j = 1; j<ROUND; ++j) {
+		blks[0] = _mm_aesenc_si128(blks[0], key[j]);
+		blks[1] = _mm_aesenc_si128(blks[1], key[j]);
+	}
+	blks[0] = _mm_aesenclast_si128(blks[0], key[j]);
+	blks[1] = _mm_aesenclast_si128(blks[1], key[j]);
+}
+/*
+** AES-128/256 encrypt for four blocks
+*/
+__inline__ static void AES_ecb_encrypt_4(
+	block *blks,
+	const block *key)
+{
+	unsigned j;
+	blks[0] = _mm_xor_si128(blks[0], key[0]);
+	blks[1] = _mm_xor_si128(blks[1], key[0]);
+	blks[2] = _mm_xor_si128(blks[2], key[0]);
+	blks[3] = _mm_xor_si128(blks[3], key[0]);
+	for (j = 1; j<ROUND; ++j) {
+		blks[0] = _mm_aesenc_si128(blks[0], key[j]);
+		blks[1] = _mm_aesenc_si128(blks[1], key[j]);
+		blks[2] = _mm_aesenc_si128(blks[2], key[j]);
+		blks[3] = _mm_aesenc_si128(blks[3], key[j]);
+	}
+	blks[0] = _mm_aesenclast_si128(blks[0], key[j]);
+	blks[1] = _mm_aesenclast_si128(blks[1], key[j]);
+	blks[2] = _mm_aesenclast_si128(blks[2], key[j]);
+	blks[3] = _mm_aesenclast_si128(blks[3], key[j]);
+}
+/*
 ** AES-128/256 batch encrypt for PIPE blocks
 */
 __inline__ static void AES_ecb_encrypt_PIPE(
-	__m128i *blks,
-	const __m128i *key)
+	block *blks,
+	const block *key)
 {
 	unsigned j;
 	blks[0] = _mm_xor_si128(blks[0], key[0]);
@@ -196,11 +235,69 @@ __inline__ static void AES_ecb_encrypt_PIPE(
 	blks[7] = _mm_aesenclast_si128(blks[7], key[j]);
 #endif
 }
-
 /*
-** batch doubling from OCB method
+** Batch doubling for PIPE blocks
 */
 __inline__ static void mul2_PIPE(__m128i *dat) {
+#ifdef DOUBLING_TABLE //// Batch doubling from AES-OTR v2.0 paper @ DIAC 2015 [Minematsu-Shigeri-Kubo]
+	unsigned a, b;
+	block tmp = le(dat[0]);
+	block carry[PIPE];
+	block up4, up8;
+
+	const block sh1 = _mm_set_epi8(255, 255, 255, 255, 255, 255, 15, 14, 255, 255, 255, 255, 255, 255, 7, 6);
+	const block sh2 = _mm_set_epi8(255, 255, 255, 255, 255, 255, 13, 12, 255, 255, 255, 255, 255, 255, 5, 4);
+	const block sh3 = _mm_set_epi8(255, 255, 255, 255, 255, 255, 11, 10, 255, 255, 255, 255, 255, 255, 3, 2);
+	const block sh4 = _mm_set_epi8(255, 255, 255, 255, 255, 255, 9, 8, 255, 255, 255, 255, 255, 255, 1, 0);
+	const block *Txp = (const block*)TX;
+	const block *Typ = (const block*)TY;
+
+	a = _mm_extract_epi8(tmp, 15);
+	b = _mm_extract_epi8(tmp, 7);
+	up4 = _mm_unpacklo_epi64(Txp[a], Typ[b]);
+	up8 = _mm_unpackhi_epi64(Txp[a], Typ[b]);
+	carry[0] = _mm_shuffle_epi8(up4, sh1);
+	carry[1] = _mm_shuffle_epi8(up4, sh2);
+	carry[2] = _mm_shuffle_epi8(up4, sh3);
+	carry[3] = _mm_shuffle_epi8(up4, sh4);
+	dat[1] = _mm_slli_epi64(tmp, 1);
+	dat[2] = _mm_slli_epi64(tmp, 2);
+	dat[3] = _mm_slli_epi64(tmp, 3);
+	dat[4] = _mm_slli_epi64(tmp, 4);
+#if(PIPE>=5)
+	carry[4] = _mm_shuffle_epi8(up8, sh1);
+	dat[5] = _mm_slli_epi64(tmp, 5);
+#endif
+#if(PIPE>=6)
+	carry[5] = _mm_shuffle_epi8(up8, sh2);
+	dat[6] = _mm_slli_epi64(tmp, 6);
+#endif
+#if(PIPE>=7)
+	carry[6] = _mm_shuffle_epi8(up8, sh3);
+	dat[7] = _mm_slli_epi64(tmp, 7);
+#endif
+#if(PIPE==8)
+	carry[7] = _mm_shuffle_epi8(up8, sh4);
+	dat[8] = (_mm_slli_epi64(tmp, 8));
+#endif
+	dat[1] = le(_mm_xor_si128(dat[1], carry[0]));
+	dat[2] = le(_mm_xor_si128(dat[2], carry[1]));
+	dat[3] = le(_mm_xor_si128(dat[3], carry[2]));
+	dat[4] = le(_mm_xor_si128(dat[4], carry[3]));
+#if(PIPE>=5)
+	dat[5] = le(_mm_xor_si128(dat[5], carry[4]));
+#endif
+#if(PIPE>=6)
+	dat[6] = le(_mm_xor_si128(dat[6], carry[5]));
+#endif
+#if(PIPE>=7)
+	dat[7] = le(_mm_xor_si128(dat[7], carry[6]));
+#endif
+#if (PIPE==8)
+	dat[8] = le(_mm_xor_si128(dat[8], carry[7]));
+#endif
+
+#else //OCB method
 	const __m128i mask = _mm_set_epi32(135, 1, 1, 1);
 	__m128i intmp = le(dat[0]);
 	__m128i tmp;
@@ -210,7 +307,6 @@ __inline__ static void mul2_PIPE(__m128i *dat) {
 	tmp = _mm_shuffle_epi32(tmp, _MM_SHUFFLE(2, 1, 0, 3));
 	intmp = _mm_slli_epi32(intmp, 1); 
 	intmp = _mm_xor_si128(intmp, tmp);
-
 	dat[1] = le(intmp);
 
 	tmp = _mm_srai_epi32(intmp, 31);
@@ -218,7 +314,6 @@ __inline__ static void mul2_PIPE(__m128i *dat) {
 	tmp = _mm_shuffle_epi32(tmp, _MM_SHUFFLE(2, 1, 0, 3));
 	intmp = _mm_slli_epi32(intmp, 1); 
 	intmp = _mm_xor_si128(intmp, tmp);
-
 	dat[2] = le(intmp);
 
 	tmp = _mm_srai_epi32(intmp, 31);
@@ -265,13 +360,15 @@ __inline__ static void mul2_PIPE(__m128i *dat) {
 	intmp = _mm_xor_si128(intmp, tmp);
 	dat[8] = le(intmp);
 #endif
+
+#endif //DOUBLING_TABLE
 }
 /*
-** doubling (multiply by x over GF(2^n))
+** single doubling 
 */
-__inline__ static void mul2(__m128i in, __m128i *out) {
-	const __m128i shuf = _mm_set_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
-	const __m128i mask = _mm_set_epi32(135, 1, 1, 1);
+__inline__ static void mul2(block in, block *out) {
+	const block shuf = _mm_set_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
+	const block mask = _mm_set_epi32(135, 1, 1, 1);
 	block intmp = _mm_shuffle_epi8(in, shuf);
 	block tmp = _mm_srai_epi32(intmp, 31);
 	tmp = _mm_and_si128(tmp, mask);
@@ -281,9 +378,9 @@ __inline__ static void mul2(__m128i in, __m128i *out) {
 	*out = _mm_shuffle_epi8(*out, shuf);
 }
 
-__inline__ static void mul4(__m128i in, __m128i *out) {
-	const __m128i shuf = _mm_set_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
-	const __m128i mask = _mm_set_epi32(135, 1, 1, 1);
+__inline__ static void mul4(block in, block *out) {
+	const block shuf = _mm_set_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
+	const block mask = _mm_set_epi32(135, 1, 1, 1);
 	block intmp = _mm_shuffle_epi8(in, shuf);
 	block tmp = _mm_srai_epi32(intmp, 31);
 	tmp = _mm_and_si128(tmp, mask);
@@ -298,9 +395,9 @@ __inline__ static void mul4(__m128i in, __m128i *out) {
 	*out = _mm_shuffle_epi8(*out, shuf);
 }
 
-__inline__ static void mul3(__m128i in, __m128i *out) {
-	const __m128i shuf = _mm_set_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
-	const __m128i mask = _mm_set_epi32(135, 1, 1, 1);
+__inline__ static void mul3(block in, block *out) {
+	const block shuf = _mm_set_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
+	const block mask = _mm_set_epi32(135, 1, 1, 1);
 	block intmp = _mm_shuffle_epi8(in, shuf);
 	block tmp = _mm_srai_epi32(intmp, 31);
 	tmp = _mm_and_si128(tmp, mask);
@@ -310,89 +407,69 @@ __inline__ static void mul3(__m128i in, __m128i *out) {
 	*out = _mm_xor_si128(*out, intmp);
 	*out = _mm_shuffle_epi8(*out, shuf);
 }
-__inline__ static void mul3twice(__m128i in, __m128i *out){
-	__m128i tmp;
+__inline__ static void mul3twice(block in, block *out){
+	block tmp;
 	mul4(in, &tmp);
 	*out = _mm_xor_si128(in, tmp);
 }
 
-__inline__ static void mul7(__m128i in, __m128i *out){
-	__m128i tmp;
+__inline__ static void mul7(block in, block *out){
+	block tmp;
 	mul2(in, &tmp);
 	*out = _mm_xor_si128(in, tmp);
 	mul2(tmp, &tmp);
 	*out = _mm_xor_si128(*out, tmp);
 }
 /*
-ozp: 100...0 padding for 16-byte block
+ozp: one-zero padding for 16-byte block
 */
-__inline__ static  void ozp(uint32 length, const uint8 *in, __m128i *out){
+__inline__ static  void ozp(uint32 length, const uint8 *in, block *out){
 	ALIGN(16)uint8 tmp[BLOCK + 1] = { 0 };
 	memcpy(tmp, in, length);
 	tmp[length] = 0x80;
-	*out = _mm_load_si128((__m128i*)tmp);
+	*out = _mm_load_si128((block*)tmp);
+}
+/*
+Format function : Format(tau,N)=number2string(tau mod n,7)||0^{n-8-|N|}||1||N
+*/
+__inline__ static block fmt(const uint8 *nonce){
+	ALIGN(16)uint8 fn[BLOCK] = { 0 };
+	memcpy(&fn[BLOCK - CRYPTO_NPUBBYTES], nonce, CRYPTO_NPUBBYTES);
+	fn[0] = (uint8)(((CRYPTO_ABYTES * 8) % (BLOCK * 8)) << 1);
+	fn[BLOCK - CRYPTO_NPUBBYTES - 1] |= 0x01;
+	return _mm_load_si128((block*)fn);
 }
 /*
 ** XOR of full and partial blocks 
 */
-__inline__ static void xorp(uint32 length, const __m128i *x, const uint8 *y, uint8 *z){
-	__m128i tmp = _mm_setzero_si128();
+__inline__ static void xorp(uint32 length, const block *x, const uint8 *y, uint8 *z){
+	block tmp = _mm_setzero_si128();
 	memcpy((uint8*)&tmp, y, length);
 	tmp = _mm_xor_si128(*x, tmp);
 	memcpy(z, (uint8*)&tmp, length);
 }
 /*
-Setup : AES (enc) key schedule and generate authentication masks
+EFunc : OTR Core Encryption Function, without nonce encryption 
 */
-int Setup(const uint8 *skey)
-{
-	const block cst = _mm_setzero_si128();
-
-#if(KEY_SZ == 128)
-	AES_128_Key_Expansion(skey, encrypt_key);
-#elif(KEY_SZ == 256)
-	AES_256_Key_Expansion(skey, encrypt_key);
-#endif
-	AES_encrypt(cst, &Q, encrypt_key);
-	return SUCCESS;
-}
-/*
-EFunc : OTR Core Encryption Function, with nonce encryption 
-*/
-__m128i EFunc(
-	const uint8 *nonce,
-	uint32 nonce_len,
-#if(ADP==Seri)
-	const __m128i TA,
-#endif
+block EFunc(
+	const block *encryptedN,
 	const uint8 *plaintext,
 	uint32 pl_len,
-	uint32 t_len,
 	uint8 *ciphertext)
 {
-	uint32 i, j;
+	uint32 i;
 	uint32 ell = 0; //number of 2BLOCK-byte chunks, excl. last one
 	uint32 last = 0; //number of bytes in the last chunks
 
 	block Sum = _mm_setzero_si128();
 	block txt[PIPE], Ln[PIPE + 1];
 	uint32 rest_len = pl_len;
-	const __m128i *ptp = (__m128i*)plaintext;
-	__m128i *ctp = (__m128i*)ciphertext;
+	const block *ptp = (block*)plaintext;
+	block *ctp = (block*)ciphertext;
 	ALIGN(16)uint8 tmp[BLOCK] = { 0 };
 	block *La;
 
-	/* Encryption of nonce */
-	memcpy(&tmp[BLOCK - nonce_len], nonce, nonce_len);
-	tmp[0] = (uint8)((t_len%BLOCK) << 4);
-	tmp[BLOCK - nonce_len - 1] |= 0x01;
-	Ln[0] = _mm_load_si128((__m128i*)tmp);
-	AES_encrypt(Ln[0], &Ln[0], encrypt_key);
-#if (ADP==Seri)
-	Ln[0] = _mm_xor_si128(Ln[0], TA);
-	mul2(Ln[0], &Ln[0]);
-#endif
-
+	Ln[0] = _mm_load_si128(encryptedN);
 	/* Encryption of plaintext */
 	while (rest_len > (DBLOCK*PIPE)){
 		/* first round*/
@@ -415,9 +492,10 @@ __m128i EFunc(
 #endif
 		AES_ecb_encrypt_PIPE(txt, encrypt_key);
 		/* second round*/
-		for (j = 0; j < PIPE; j++){
-			Ln[j] = _mm_xor_si128(Ln[j], Ln[j + 1]);
-		}
+		Ln[0] = _mm_xor_si128(Ln[0], Ln[1]);
+		Ln[1] = _mm_xor_si128(Ln[1], Ln[2]);
+		Ln[2] = _mm_xor_si128(Ln[2], Ln[3]);
+		Ln[3] = _mm_xor_si128(Ln[3], Ln[4]);
 		ctp[0] = _mm_xor_si128(txt[0], ptp[1]);
 		txt[0] = _mm_xor_si128(Ln[0], ctp[0]);
 		ctp[2] = _mm_xor_si128(txt[1], ptp[3]);
@@ -427,18 +505,22 @@ __m128i EFunc(
 		ctp[6] = _mm_xor_si128(txt[3], ptp[7]);
 		txt[3] = _mm_xor_si128(Ln[3], ctp[6]);
 #if (PIPE>=5)
+		Ln[4] = _mm_xor_si128(Ln[4], Ln[5]);
 		ctp[8] = _mm_xor_si128(txt[4], ptp[9]);
 		txt[4] = _mm_xor_si128(Ln[4], ctp[8]);
 #endif
 #if (PIPE>=6)
+		Ln[5] = _mm_xor_si128(Ln[5], Ln[6]);
 		ctp[10] = _mm_xor_si128(txt[5], ptp[11]);
 		txt[5] = _mm_xor_si128(Ln[5], ctp[10]);
 #endif
 #if (PIPE>=7)
+		Ln[6] = _mm_xor_si128(Ln[6], Ln[7]);
 		ctp[12] = _mm_xor_si128(txt[6], ptp[13]);
 		txt[6] = _mm_xor_si128(Ln[6], ctp[12]);
 #endif
 #if (PIPE==8)
+		Ln[7] = _mm_xor_si128(Ln[7], Ln[8]);
 		ctp[14] = _mm_xor_si128(txt[7], ptp[15]);
 		txt[7] = _mm_xor_si128(Ln[7], ctp[14]);
 #endif
@@ -472,14 +554,51 @@ __m128i EFunc(
 		ctp += (2 * PIPE);
 		rest_len -= (DBLOCK*PIPE);
 	}
-
 	if (rest_len != 0){
 		last = rest_len % DBLOCK;
 		if (last == 0) last = DBLOCK;
 		ell = (rest_len - last) / DBLOCK; // plaintext length = 2BLOCK*ell + last (non-zero)
 	}
-
 	/* 2-round Feistel for the full chunks */
+	if (ell >= 4){
+		/* first round*/
+		mul2(Ln[0], &Ln[1]);
+		mul2(Ln[1], &Ln[2]);
+		mul2(Ln[2], &Ln[3]);
+		mul2(Ln[3], &Ln[4]);
+		txt[0] = _mm_xor_si128(Ln[0], ptp[0]);
+		txt[1] = _mm_xor_si128(Ln[1], ptp[2]);
+		txt[2] = _mm_xor_si128(Ln[2], ptp[4]);
+		txt[3] = _mm_xor_si128(Ln[3], ptp[6]);
+		AES_ecb_encrypt_4(txt, encrypt_key);
+		/* second round*/
+		Ln[0] = _mm_xor_si128(Ln[0], Ln[1]);
+		Ln[1] = _mm_xor_si128(Ln[1], Ln[2]);
+		Ln[2] = _mm_xor_si128(Ln[2], Ln[3]);
+		Ln[3] = _mm_xor_si128(Ln[3], Ln[4]);
+		ctp[0] = _mm_xor_si128(txt[0], ptp[1]);
+		txt[0] = _mm_xor_si128(Ln[0], ctp[0]);
+		ctp[2] = _mm_xor_si128(txt[1], ptp[3]);
+		txt[1] = _mm_xor_si128(Ln[1], ctp[2]);
+		ctp[4] = _mm_xor_si128(txt[2], ptp[5]);
+		txt[2] = _mm_xor_si128(Ln[2], ctp[4]);
+		ctp[6] = _mm_xor_si128(txt[3], ptp[7]);
+		txt[3] = _mm_xor_si128(Ln[3], ctp[6]);
+		AES_ecb_encrypt_4(txt, encrypt_key);
+		ctp[1] = _mm_xor_si128(txt[0], ptp[0]);
+		Sum = _mm_xor_si128(Sum, ptp[1]);
+		ctp[3] = _mm_xor_si128(txt[1], ptp[2]);
+		Sum = _mm_xor_si128(Sum, ptp[3]);
+		ctp[5] = _mm_xor_si128(txt[2], ptp[4]);
+		Sum = _mm_xor_si128(Sum, ptp[5]);
+		ctp[7] = _mm_xor_si128(txt[3], ptp[6]);
+		Sum = _mm_xor_si128(Sum, ptp[7]);
+
+		Ln[0] = _mm_load_si128(&Ln[4]);
+		ell -= 4;
+		ptp += 8;
+		ctp += 8;
+	}
 	mul3(Ln[0], &Ln[1]);
 	for (i = 0; i < (2 * ell); i += 2){
 		txt[0] = _mm_xor_si128(Ln[0], ptp[i]);
@@ -496,7 +615,7 @@ __m128i EFunc(
 	ctp += (2 * ell);
 	/* Last chunk */
 	if (last <= BLOCK){ 	//odd block, including the case pl_len = 0 (no plaintext)
-		AES_encrypt(Ln[0], &txt[0], encrypt_key);//txt[0] is Z
+		AES_encrypt(Ln[0], &txt[0], encrypt_key);
 		xorp(last, &txt[0], (uint8*)ptp, (uint8*)ctp);
 		ozp(last, (uint8*)ptp, &txt[0]);
 		Sum = _mm_xor_si128(txt[0], Sum);
@@ -504,12 +623,12 @@ __m128i EFunc(
 	}
 	else{//even blocks, last > BLOCK always holds. 2-round Feistel with last swap
 		txt[0] = _mm_xor_si128(Ln[0], ptp[0]);
-		AES_encrypt(txt[0], &txt[1], encrypt_key); //txt[1] is Z
+		AES_encrypt(txt[0], &txt[1], encrypt_key); 
 		xorp(last - BLOCK, &txt[1], (uint8*)&ptp[1], (uint8*)&ctp[1]);
-		ozp(last - BLOCK, (uint8*)&ctp[1], &txt[0]); //txt[0] = ozp(C[lastblock])
+		ozp(last - BLOCK, (uint8*)&ctp[1], &txt[0]); 
 		Sum = _mm_xor_si128(Sum, txt[0]);
 		Sum = _mm_xor_si128(Sum, txt[1]);
-		txt[0] = _mm_xor_si128(Ln[1], txt[0]); //txt[0] = Lsharp + ozp(C[lastblock])
+		txt[0] = _mm_xor_si128(Ln[1], txt[0]); 
 		AES_encrypt(txt[0], &txt[0], encrypt_key);
 		ctp[0] = _mm_xor_si128(txt[0], ptp[0]);
 		La = &Ln[1];
@@ -522,21 +641,15 @@ __m128i EFunc(
 		mul3twice(*La, La);
 	}
 	Sum = _mm_xor_si128(Sum, *La);	//Sum = (3^2 or 7)L* xor Sum
-	AES_encrypt(Sum, &Sum, encrypt_key);
-	return Sum; //TE
+	return Sum; //Enc(Sum)=TE
 }
 /*
-DFunc : OTR Core Decryption Function, with nonce encryption 
+DFunc : OTR Core Decryption Function, without nonce encryption
 */
-__m128i DFunc(
-	const uint8 *nonce,
-	uint32 nonce_len,
-#if(ADP==Seri)
-	const __m128i TA,
-#endif
+block DFunc(
+	const block *encryptedN,
 	const uint8 *ciphertext,
 	uint32 ci_len,
-	uint32 t_len,
 	uint8 *plaintext)
 {
 	uint32 i;
@@ -546,22 +659,12 @@ __m128i DFunc(
 	block Sum = _mm_setzero_si128();
 	block txt[PIPE], Ln[PIPE + 1];
 	uint32 rest_len = ci_len;
-	__m128i *ptp = (__m128i*)plaintext;
-	const __m128i *ctp = (__m128i*)ciphertext;
+	block *ptp = (block*)plaintext;
+	const block *ctp = (block*)ciphertext;
 	ALIGN(16)uint8 tmp[BLOCK] = { 0 };
 	block *La;
 
-	/* Encryption of nonce */
-	memcpy(&tmp[BLOCK - nonce_len], nonce, nonce_len);
-	tmp[0] = (uint8)((t_len%BLOCK) << 4);
-	tmp[BLOCK - nonce_len - 1] |= 0x01;
-	Ln[0] = _mm_load_si128((__m128i*)tmp);
-	AES_encrypt(Ln[0], &Ln[0], encrypt_key);
-
-#if (ADP==Seri)
-	Ln[0] = _mm_xor_si128(Ln[0], TA);
-	mul2(Ln[0], &Ln[0]);
-#endif
+	Ln[0] = _mm_load_si128(encryptedN);
 	while (rest_len > (DBLOCK*PIPE)){
 		/* first round*/
 		mul2_PIPE(Ln);
@@ -645,14 +748,51 @@ __m128i DFunc(
 		ctp += (2 * PIPE);
 		rest_len -= (DBLOCK*PIPE);
 	}
-
 	if (rest_len != 0){
 		last = rest_len % DBLOCK;
 		if (last == 0) last = DBLOCK;
 		ell = (rest_len - last) / DBLOCK; // plaintext length = 2BLOCK*ell + last (non-zero)
 	}
-
 	/* 2-round Feistel for the full chunks */
+	if (ell >= 4){
+		/* first round*/
+		mul2(Ln[0], &Ln[1]);
+		mul2(Ln[1], &Ln[2]);
+		mul2(Ln[2], &Ln[3]);
+		mul2(Ln[3], &Ln[4]);
+		txt[0] = _mm_xor_si128(Ln[0], ctp[0]);
+		txt[0] = _mm_xor_si128(Ln[1], txt[0]);
+		txt[1] = _mm_xor_si128(Ln[1], ctp[2]);
+		txt[1] = _mm_xor_si128(Ln[2], txt[1]);
+		txt[2] = _mm_xor_si128(Ln[2], ctp[4]);
+		txt[2] = _mm_xor_si128(Ln[3], txt[2]);
+		txt[3] = _mm_xor_si128(Ln[3], ctp[6]);
+		txt[3] = _mm_xor_si128(Ln[4], txt[3]); 
+		AES_ecb_encrypt_4(txt, encrypt_key);
+		/* second round*/
+		ptp[0] = _mm_xor_si128(txt[0], ctp[1]);
+		txt[0] = _mm_xor_si128(Ln[0], ptp[0]);
+		ptp[2] = _mm_xor_si128(txt[1], ctp[3]);
+		txt[1] = _mm_xor_si128(Ln[1], ptp[2]);
+		ptp[4] = _mm_xor_si128(txt[2], ctp[5]);
+		txt[2] = _mm_xor_si128(Ln[2], ptp[4]);
+		ptp[6] = _mm_xor_si128(txt[3], ctp[7]);
+		txt[3] = _mm_xor_si128(Ln[3], ptp[6]);
+		AES_ecb_encrypt_4(txt, encrypt_key);
+		ptp[1] = _mm_xor_si128(txt[0], ctp[0]);
+		Sum = _mm_xor_si128(Sum, ptp[1]);
+		ptp[3] = _mm_xor_si128(txt[1], ctp[2]);
+		Sum = _mm_xor_si128(Sum, ptp[3]);
+		ptp[5] = _mm_xor_si128(txt[2], ctp[4]);
+		Sum = _mm_xor_si128(Sum, ptp[5]);
+		ptp[7] = _mm_xor_si128(txt[3], ctp[6]);
+		Sum = _mm_xor_si128(Sum, ptp[7]);
+
+		Ln[0] = _mm_load_si128(&Ln[4]);
+		ell -= 4;
+		ptp += 8;
+		ctp += 8;
+	}
 	mul3(Ln[0], &Ln[1]);
 	for (i = 0; i < (2 * ell); i += 2){
 		txt[0] = _mm_xor_si128(Ln[1], ctp[i]);
@@ -695,41 +835,83 @@ __m128i DFunc(
 		mul3twice(*La, La);
 	}
 	Sum = _mm_xor_si128(Sum, *La);	//Sum = (3^2 or 7)L* xor Sum
-	AES_encrypt(Sum, &Sum, encrypt_key);
-	return Sum;//TE
+	return Sum;//Enc(Sum)=TE
 }//end of DFunc
 /*
-AFunc : OTR Core Authentication Function (ADP=p)
+AFunc : OTR Core Authentication Function (ADP=p), without final encryption
 */
-__m128i AFunc(
+block AFunc(
 	const uint8 *header,
+	const block *Q,
 	uint32 h_len)
 {
 	uint32 i;
 	uint32 m, last;
 	block tmp[PIPE], mask[PIPE + 1], ASum = _mm_setzero_si128();
 	uint32 rest_len = h_len;
-	const __m128i *hdp = (__m128i*)header;
+	const block *hdp = (block*)header;
 
-	mask[0] = _mm_load_si128(&Q);
+	mask[0] = _mm_load_si128(Q);
 	while (rest_len > (BLOCK*PIPE)){
 		mul2_PIPE(mask);
-		for (i = 0; i < PIPE; i++){
-			tmp[i] = _mm_xor_si128(mask[i], hdp[i]);
-		}
+		tmp[0] = _mm_xor_si128(mask[0], hdp[0]);
+		tmp[1] = _mm_xor_si128(mask[1], hdp[1]);
+		tmp[2] = _mm_xor_si128(mask[2], hdp[2]);
+		tmp[3] = _mm_xor_si128(mask[3], hdp[3]);
+#if(PIPE>=5)
+		tmp[4] = _mm_xor_si128(mask[4], hdp[4]);
+#endif
+#if(PIPE>=6)
+		tmp[5] = _mm_xor_si128(mask[5], hdp[5]);
+#endif
+#if(PIPE>=7)
+		tmp[6] = _mm_xor_si128(mask[6], hdp[6]);
+#endif
+#if(PIPE==8)
+		tmp[7] = _mm_xor_si128(mask[7], hdp[7]);
+#endif
 		AES_ecb_encrypt_PIPE(tmp, encrypt_key);
-		for (i = 0; i < PIPE; i++){
-			ASum = _mm_xor_si128(ASum, tmp[i]);
-		}
+		ASum = _mm_xor_si128(ASum, tmp[0]);
+		ASum = _mm_xor_si128(ASum, tmp[1]);
+		ASum = _mm_xor_si128(ASum, tmp[2]);
+		ASum = _mm_xor_si128(ASum, tmp[3]);
+#if(PIPE>=5)
+		ASum = _mm_xor_si128(ASum, tmp[4]);
+#endif
+#if(PIPE>=6)
+		ASum = _mm_xor_si128(ASum, tmp[5]);
+#endif
+#if(PIPE>=7)
+		ASum = _mm_xor_si128(ASum, tmp[6]);
+#endif
+#if(PIPE==8)
+		ASum = _mm_xor_si128(ASum, tmp[7]);
+#endif
 		rest_len -= (BLOCK*PIPE);
 		hdp += PIPE;
 		mask[0] = _mm_load_si128(&mask[PIPE]);
 	}
-
 	last = rest_len % BLOCK;
 	if (last == 0) last = BLOCK;
 	m = (rest_len - last) / BLOCK; //header = m blocks + last bytes
-
+	if (m >= 4){
+		mul2(mask[0], &mask[1]);
+		mul2(mask[1], &mask[2]);
+		mul2(mask[2], &mask[3]);
+		mul2(mask[3], &mask[4]);
+		tmp[0] = _mm_xor_si128(mask[0], hdp[0]);
+		tmp[1] = _mm_xor_si128(mask[1], hdp[1]);
+		tmp[2] = _mm_xor_si128(mask[2], hdp[2]);
+		tmp[3] = _mm_xor_si128(mask[3], hdp[3]);
+		AES_ecb_encrypt_4(tmp, encrypt_key);
+		ASum = _mm_xor_si128(ASum, tmp[0]);
+		ASum = _mm_xor_si128(ASum, tmp[1]);
+		ASum = _mm_xor_si128(ASum, tmp[2]);
+		ASum = _mm_xor_si128(ASum, tmp[3]);
+		hdp += 4;
+		mask[0] = _mm_load_si128(&mask[4]);
+		m -= 4;
+	}
 	for (i = 0; i < m; i++){
 		tmp[0] = _mm_xor_si128(mask[0], hdp[i]);
 		AES_encrypt(tmp[0], &tmp[0], encrypt_key);
@@ -740,6 +922,7 @@ __m128i AFunc(
 	/* last block */
 	ozp(last, (uint8*)&hdp[0], &tmp[0]);
 	ASum = _mm_xor_si128(ASum, tmp[0]);
+	/* TA generation */
 	if (last != BLOCK){
 		mul3(mask[0], &mask[0]);
 	}
@@ -747,20 +930,20 @@ __m128i AFunc(
 		mul3twice(mask[0], &mask[0]);
 	}
 	ASum = _mm_xor_si128(ASum, mask[0]);
-	AES_encrypt(ASum, &ASum, encrypt_key);
-	return ASum; //TA
+	return ASum; //Enc(ASum)=TA
 }
 /*
 AFuncS : OTR Core Authentication Function (ADP=s)
 */
-__m128i AFuncS(
+block AFuncS(
 	const uint8 *header,
+	const block *Q,
 	uint32 h_len)
 {
 	uint32 i;
 	uint32 m, last;
 	block chain = _mm_setzero_si128(), tmp, mask;
-	const __m128i *hdp = (__m128i*)header;
+	const block *hdp = (block*)header;
 
 	last = h_len % BLOCK;
 	if (last == 0) last = BLOCK;
@@ -775,10 +958,10 @@ __m128i AFuncS(
 	ozp(last, (uint8*)&hdp[0], &tmp);
 	chain = _mm_xor_si128(tmp, chain);
 	if (last != BLOCK){
-		mul2(Q, &mask);
+		mul2(*Q, &mask);
 	}
 	else{
-		mul4(Q, &mask);
+		mul4(*Q, &mask);
 	}
 	chain = _mm_xor_si128(chain, mask);
 	AES_encrypt(chain, &chain, encrypt_key);
@@ -794,22 +977,36 @@ int crypto_aead_encrypt(
 	const unsigned char *k
 	)
 {
-	block TA = _mm_setzero_si128(), TE;
+	block V[2], T[2];
+	V[0] = _mm_setzero_si128();
 
-	Setup(k);
-#if(ADP==Para)
-	if ((uint32)adlen > 0){
-		TA = AFunc(ad, (uint32)adlen);
-	}
-	TE = EFunc(npub, CRYPTO_NPUBBYTES, m, (uint32)mlen, CRYPTO_ABYTES, c);
-	TE = _mm_xor_si128(TE, TA);
-#else
-	if ((uint32)adlen > 0){
-		TA = AFuncS(ad, (uint32)adlen);
-	}
-	TE = EFunc(npub, CRYPTO_NPUBBYTES, TA, m, (uint32)mlen, CRYPTO_ABYTES, c);
+#if(CRYPTO_KEYBYTES == 16)
+	AES_128_Key_Expansion(k, encrypt_key);
+#elif(CRYPTO_KEYBYTES == 32)
+	AES_256_Key_Expansion(k, encrypt_key);
 #endif
-	memcpy(c + mlen, (uint8*)&TE, CRYPTO_ABYTES);
+	V[1] = fmt(npub);
+	AES_ecb_encrypt_2(V, encrypt_key); //V[0] = Q=E(0), V[1] = E(fmt(N))
+#if(ADP==Para)
+	T[1] = EFunc(&V[1], m, (uint32)mlen, c);
+	if ((uint32)adlen > 0){
+		T[0] = AFunc(ad, &V[0], (uint32)adlen);
+		AES_ecb_encrypt_2(T, encrypt_key); //Enc(T[0]) =TA, Enc(T[1]) = TE
+		T[0] = _mm_xor_si128(T[0], T[1]);
+	}
+	else{
+		AES_encrypt(T[1],&T[0],encrypt_key);
+	}//T[0] = Tag before truncate
+#else //ADP=Seri
+	if ((uint32)adlen > 0){
+		T[0] = AFuncS(ad, &V[0], (uint32)adlen);
+		V[1] = _mm_xor_si128(V[1], T[0]);
+	}
+	mul2(V[1], &V[1]);
+	T[1] = EFunc(&V[1], m, (uint32)mlen, c);
+	AES_encrypt(T[1], &T[0], encrypt_key);
+#endif //ADP
+	memcpy(c + mlen, (uint8*)&T[0], CRYPTO_ABYTES);
 	*clen = mlen + CRYPTO_ABYTES;
 	return 0;
 }
@@ -823,28 +1020,38 @@ int crypto_aead_decrypt(
 	const unsigned char *k
 	)
 {
-	uint8 loctag[BLOCK];
-	block TA = _mm_setzero_si128(), TE;
+	block V[2], T[2]; 
+	V[0] = _mm_setzero_si128();
 
 	*mlen = clen - CRYPTO_ABYTES;
-	Setup(k);
-#if (ADP==Para)
-	if ((uint32)adlen > 0){
-		TA = AFunc(ad, (uint32)adlen);
-	}
-	TE = DFunc(npub, CRYPTO_NPUBBYTES, c,
-		(uint32)clen - CRYPTO_ABYTES, CRYPTO_ABYTES, m);
-	TE = _mm_xor_si128(TE, TA);
-#else 
-	if ((uint32)adlen > 0){
-		TA = AFuncS(ad, (uint32)adlen);
-	}
-	TE = DFunc(npub, CRYPTO_NPUBBYTES, TA, c,
-		(uint32)clen - CRYPTO_ABYTES, CRYPTO_ABYTES, m);
+#if(CRYPTO_KEYBYTES == 16)
+	AES_128_Key_Expansion(k, encrypt_key);
+#elif(CRYPTO_KEYBYTES == 32)
+	AES_256_Key_Expansion(k, encrypt_key);
 #endif
-	memcpy(loctag, (uint8*)&TE, CRYPTO_ABYTES);
-	if (memcmp(loctag, c + (uint32)*mlen, CRYPTO_ABYTES) != 0){//non-constant-time compare
-		return TAG_UNMATCH; //-1
+	V[1] = fmt(npub);
+	AES_ecb_encrypt_2(V, encrypt_key); //V[0] = Q=E(0), V[1] = E(fmt(N))
+#if (ADP==Para)
+	T[1] = DFunc(&V[1], c, 	(uint32)*mlen, m);
+	if ((uint32)adlen > 0){
+		T[0] = AFunc(ad, &V[0], (uint32)adlen);
+		AES_ecb_encrypt_2(T, encrypt_key); //Enc(T[0]) =TA, Enc(T[1]) = TE
+		T[0] = _mm_xor_si128(T[0], T[1]);
 	}
-	return TAG_MATCH; //0
+	else{
+		AES_encrypt(T[1], &T[0], encrypt_key);
+	}//T[0] is tag before truncate
+#else //ADP=Seri
+	if ((uint32)adlen > 0){
+		T[0] = AFuncS(ad, &V[0], (uint32)adlen);
+		V[1] = _mm_xor_si128(V[1], T[0]);
+	}
+	mul2(V[1], &V[1]);
+	T[1] = DFunc(&V[1], c, (uint32)clen - CRYPTO_ABYTES, m);
+	AES_encrypt(T[1], &T[0], encrypt_key);
+#endif //ADP
+	if (memcmp(&T[0], c + (uint32)*mlen, CRYPTO_ABYTES) != 0){//non-constant-time compare
+		return TAG_UNMATCH;
+	}
+	return TAG_MATCH;
 }

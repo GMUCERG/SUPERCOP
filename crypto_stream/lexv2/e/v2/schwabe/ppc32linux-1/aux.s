@@ -1,17 +1,17 @@
 	.file	"aux.c"
 	.section	".text"
 	.align 2
-	.globl ECRYPT_init
-	.type	ECRYPT_init, @function
-ECRYPT_init:
+	.globl crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_init
+	.type	crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_init, @function
+crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_init:
 	stwu 1,-16(1)
 	addi 1,1,16
 	blr
-	.size	ECRYPT_init,.-ECRYPT_init
+	.size	crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_init,.-crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_init
 	.align 2
-	.globl ECRYPT_keysetup
-	.type	ECRYPT_keysetup, @function
-ECRYPT_keysetup:
+	.globl crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_keysetup
+	.type	crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_keysetup, @function
+crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_keysetup:
 	stwu 1,-32(1)
 	lis 9,aes_big_constants@ha
 	li 0,10
@@ -59,11 +59,11 @@ ECRYPT_keysetup:
 	lwz 31,28(1)
 	addi 1,1,32
 	blr
-	.size	ECRYPT_keysetup,.-ECRYPT_keysetup
+	.size	crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_keysetup,.-crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_keysetup
 	.align 2
-	.globl ECRYPT_process_bytes_C
-	.type	ECRYPT_process_bytes_C, @function
-ECRYPT_process_bytes_C:
+	.globl crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_process_bytes_C
+	.type	crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_process_bytes_C, @function
+crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_process_bytes_C:
 	mflr 0
 	stwu 1,-384(1)
 	mtlr 6
@@ -378,7 +378,7 @@ ECRYPT_process_bytes_C:
 	addi 1,1,384
 	mtlr 0
 	blr
-	.size	ECRYPT_process_bytes_C,.-ECRYPT_process_bytes_C
+	.size	crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_process_bytes_C,.-crypto_stream_lexv2_e_v2_schwabe_ppc32linux_1_ECRYPT_process_bytes_C
 	.globl aes_big_constants
 	.section	.rodata
 	.align 2

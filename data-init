@@ -81,6 +81,18 @@ do
   touch "$top/$abi/gmp/LOCK"
   : > "$top/$abi/gmp/dep"
   echo "$abi/gmp" >&6
+
+  mkdir -p "$top/$abi/ntl"
+  touch "$top/$abi/ntl/BUILD"
+  touch "$top/$abi/ntl/LOCK"
+  echo gmp > "$top/$abi/ntl/dep"
+  echo "$abi/ntl" >&6
+
+  mkdir -p "$top/$abi/keccak"
+  touch "$top/$abi/keccak/BUILD"
+  touch "$top/$abi/keccak/LOCK"
+  : > "$top/$abi/keccak/dep"
+  echo "$abi/keccak" >&6
 done
 
 
@@ -141,6 +153,17 @@ okabi \
 do
   cp -p "$top/cpucycles/include/$abi"/* "$top/$abi/include/"
   cp -p "$top/cpucycles/lib/$abi"/* "$top/$abi/lib/"
+done
+
+echo "=== `date` === building kernelrandombytes"
+rm -rf "$top/kernelrandombytes"
+mkdir -p "$top/kernelrandombytes"
+cp -pr kernelrandombytes/* "$top/kernelrandombytes"
+( cd "$top/kernelrandombytes" && sh do )
+okabi \
+| while read abi
+do
+  cp -p "$top/kernelrandombytes/lib/$abi"/* "$top/$abi/lib/"
 done
 
 
@@ -207,7 +230,7 @@ do
           cat "try-anything.c"
           cat "measure-anything.c"
           find "$implementationdir" -follow -type f \
-	  | egrep '\.c$|\.s$|\.S$|\.cc$|\.cpp$' \
+	  | egrep '\.h$|\.c$|\.s$|\.S$|\.cc$|\.cpp$' \
           | xargs cat
         ) \
         | grep '#include' \
@@ -229,6 +252,13 @@ do
             gmp*)
               echo gmp
               ;;
+            NTL*)
+              echo gmp
+              echo ntl
+              ;;
+            libkeccak.a.headers)
+              echo keccak
+              ;;
             crypto_*_*)
               op=`echo "$incl" | sed 's/_\(.*\)_/_\1\//'`
 	      if [ -d "$top/$abi/integrate/$op" ]
@@ -238,6 +268,19 @@ do
               ;;
           esac
         done | sort -u > "$top/$abi/implementation/$implementationdir/dep"
+
+	userandombytes=0
+	[ $o = crypto_scalarmult ] && userandombytes=1
+	[ $o = crypto_box ] && userandombytes=1
+	[ $o = crypto_dh ] && userandombytes=1
+	[ $o = crypto_encrypt ] && userandombytes=1
+	[ $o = crypto_kem ] && userandombytes=1
+	[ $o = crypto_sign ] && userandombytes=1
+	if [ $userandombytes = 1 ]
+	then
+	  echo "knownrandombytes" >> "$top/$abi/implementation/$implementationdir/dep"
+	  echo "fastrandombytes" >> "$top/$abi/implementation/$implementationdir/dep"
+	fi
 
 	implementationdir=`dirname $doth`
         echo "=== `date` === todo $abi/try/.../$implementationdir"
@@ -301,6 +344,39 @@ do
       ) > "$top/$abi/integrate/$o/$p/dep"
     done
   done
+  
+  if [ $o = crypto_rng ]
+  then
+    okabi \
+    | while read abi
+    do
+      echo "=== `date` === todo $abi/knownrandombytes"
+      echo $abi/knownrandombytes >&6
+      mkdir -p "$top/$abi/knownrandombytes"
+      touch "$top/$abi/knownrandombytes/BUILD"
+      touch "$top/$abi/knownrandombytes/LOCK"
+      ls $o \
+      | sort \
+      | while read p
+      do
+        [ -d "$o/$p" ] || continue
+        echo integrate/$o/$p
+      done > "$top/$abi/knownrandombytes/dep"
+
+      echo "=== `date` === todo $abi/fastrandombytes"
+      echo $abi/fastrandombytes >&6
+      mkdir -p "$top/$abi/fastrandombytes"
+      touch "$top/$abi/fastrandombytes/BUILD"
+      touch "$top/$abi/fastrandombytes/LOCK"
+      ls $o \
+      | sort \
+      | while read p
+      do
+        [ -d "$o/$p" ] || continue
+        echo integrate/$o/$p
+      done > "$top/$abi/fastrandombytes/dep"
+    done
+  fi
 done
 
 

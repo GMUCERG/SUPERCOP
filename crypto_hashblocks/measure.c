@@ -1,4 +1,5 @@
 #include "crypto_hashblocks.h"
+#include "measure.h"
 
 const char *primitiveimplementation = crypto_hashblocks_IMPLEMENTATION;
 const char *implementationversion = crypto_hashblocks_VERSION;

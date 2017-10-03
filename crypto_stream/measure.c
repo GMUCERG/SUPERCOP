@@ -1,16 +1,8 @@
 #include <stdlib.h>
-#include "randombytes.h"
+#include "kernelrandombytes.h"
 #include "cpucycles.h"
 #include "crypto_stream.h"
-
-extern void printentry(long long,const char *,long long *,long long);
-extern unsigned char *alignedcalloc(unsigned long long);
-extern const char *primitiveimplementation;
-extern const char *implementationversion;
-extern const char *sizenames[];
-extern const long long sizes[];
-extern void allocate(void);
-extern void measure(void);
+#include "measure.h"
 
 const char *primitiveimplementation = crypto_stream_IMPLEMENTATION;
 const char *implementationversion = crypto_stream_VERSION;
@@ -52,10 +44,10 @@ void measure(void)
 
   for (loop = 0;loop < LOOPS;++loop) {
     for (mlen = 0;mlen <= MAXTEST_BYTES;mlen += 1 + mlen / MGAP) {
-      randombytes(k,crypto_stream_KEYBYTES);
-      randombytes(n,crypto_stream_NONCEBYTES);
-      randombytes(m,mlen);
-      randombytes(c,mlen);
+      kernelrandombytes(k,crypto_stream_KEYBYTES);
+      kernelrandombytes(n,crypto_stream_NONCEBYTES);
+      kernelrandombytes(m,mlen);
+      kernelrandombytes(c,mlen);
       for (i = 0;i <= TIMINGS;++i) {
         cycles[i] = cpucycles();
 	crypto_stream(c,mlen,n,k);

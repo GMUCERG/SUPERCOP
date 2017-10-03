@@ -1041,20 +1041,20 @@ aes_little_constants:
 	.long	742004246
 	.section	".text"
 	.align 4
-	.global ECRYPT_init
-	.type	ECRYPT_init, #function
+	.global crypto_stream_lexv2_e_v2_schwabe_sparc_2_ECRYPT_init
+	.type	crypto_stream_lexv2_e_v2_schwabe_sparc_2_ECRYPT_init, #function
 	.proc	020
-ECRYPT_init:
+crypto_stream_lexv2_e_v2_schwabe_sparc_2_ECRYPT_init:
 	!#PROLOGUE# 0
 	!#PROLOGUE# 1
 	retl
 	nop
-	.size	ECRYPT_init, .-ECRYPT_init
+	.size	crypto_stream_lexv2_e_v2_schwabe_sparc_2_ECRYPT_init, .-crypto_stream_lexv2_e_v2_schwabe_sparc_2_ECRYPT_init
 	.align 4
-	.global ECRYPT_keysetup
-	.type	ECRYPT_keysetup, #function
+	.global crypto_stream_lexv2_e_v2_schwabe_sparc_2_ECRYPT_keysetup
+	.type	crypto_stream_lexv2_e_v2_schwabe_sparc_2_ECRYPT_keysetup, #function
 	.proc	020
-ECRYPT_keysetup:
+crypto_stream_lexv2_e_v2_schwabe_sparc_2_ECRYPT_keysetup:
 	!#PROLOGUE# 0
 	save	%sp, -192, %sp
 	!#PROLOGUE# 1
@@ -1157,5 +1157,5 @@ ECRYPT_keysetup:
 	add	%i2, 4, %i2
 	return	%i7+8
 	nop
-	.size	ECRYPT_keysetup, .-ECRYPT_keysetup
+	.size	crypto_stream_lexv2_e_v2_schwabe_sparc_2_ECRYPT_keysetup, .-crypto_stream_lexv2_e_v2_schwabe_sparc_2_ECRYPT_keysetup
 	.ident	"GCC: (GNU) 3.4.5"

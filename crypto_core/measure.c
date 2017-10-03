@@ -1,4 +1,5 @@
 #include "crypto_core.h"
+#include "measure.h"
 
 const char *primitiveimplementation = crypto_core_IMPLEMENTATION;
 const char *implementationversion = crypto_core_VERSION;

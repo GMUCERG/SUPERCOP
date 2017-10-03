@@ -1,6 +1,7 @@
 static double osfreq(void)
 {
   FILE *f;
+  char *x;
   double result;
   int s;
 
@@ -80,6 +81,12 @@ static double osfreq(void)
     }
     pclose(f);
     if (result) return 1000000.0 * result;
+  }
+
+  x = getenv("cpucyclespersecond");
+  if (x) {
+    s = sscanf(x,"%lf",&result);
+    if (s > 0) return result;
   }
 
   return 0;

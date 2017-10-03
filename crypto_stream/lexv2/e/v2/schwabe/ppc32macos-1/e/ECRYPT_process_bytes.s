@@ -1,9 +1,9 @@
 .text
 .align 3
-.globl _ECRYPT_process_bytes_qhasm
-.globl ECRYPT_process_bytes_qhasm
-_ECRYPT_process_bytes_qhasm:
-ECRYPT_process_bytes_qhasm:
+.globl _crypto_stream_lexv2_e_v2_schwabe_ppc32macos_1_ECRYPT_process_bytes_qhasm
+.globl crypto_stream_lexv2_e_v2_schwabe_ppc32macos_1_ECRYPT_process_bytes_qhasm
+_crypto_stream_lexv2_e_v2_schwabe_ppc32macos_1_ECRYPT_process_bytes_qhasm:
+crypto_stream_lexv2_e_v2_schwabe_ppc32macos_1_ECRYPT_process_bytes_qhasm:
 stwu r1,-464(r1)
 cmplwi r7,0
 blt .label.donothing

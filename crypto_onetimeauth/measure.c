@@ -1,15 +1,7 @@
 #include "crypto_onetimeauth.h"
-#include "randombytes.h"
+#include "kernelrandombytes.h"
 #include "cpucycles.h"
-
-extern void printentry(long long,const char *,long long *,long long);
-extern unsigned char *alignedcalloc(unsigned long long);
-extern const char *primitiveimplementation;
-extern const char *implementationversion;
-extern const char *sizenames[];
-extern const long long sizes[];
-extern void allocate(void);
-extern void measure(void);
+#include "measure.h"
 
 const char *primitiveimplementation = crypto_onetimeauth_IMPLEMENTATION;
 const char *implementationversion = crypto_onetimeauth_VERSION;
@@ -49,9 +41,9 @@ void measure(void)
 
   for (loop = 0;loop < LOOPS;++loop) {
     for (mlen = 0;mlen <= MAXTEST_BYTES;mlen += 1 + mlen / MGAP) {
-      randombytes(k,crypto_onetimeauth_KEYBYTES);
-      randombytes(m,mlen);
-      randombytes(h,crypto_onetimeauth_BYTES);
+      kernelrandombytes(k,crypto_onetimeauth_KEYBYTES);
+      kernelrandombytes(m,mlen);
+      kernelrandombytes(h,crypto_onetimeauth_BYTES);
       for (i = 0;i <= TIMINGS;++i) {
         cycles[i] = cpucycles();
 	crypto_onetimeauth(h,m,mlen,k);

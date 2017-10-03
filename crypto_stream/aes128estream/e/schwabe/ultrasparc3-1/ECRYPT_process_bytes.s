@@ -129,11 +129,11 @@
 
 # qhasm: stack128 tmp
 
-# qhasm: enter ECRYPT_process_bytes
+# qhasm: enter crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_process_bytes
 .section ".text"
 .align 32
-.global ECRYPT_process_bytes
-ECRYPT_process_bytes:
+.global crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_process_bytes
+crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_process_bytes:
 save %sp,-192,%sp
 
 # qhasm: =? length - 0

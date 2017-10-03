@@ -169,11 +169,11 @@
 
 # qhasm: stack64 x43
 
-# qhasm: enter ECRYPT_ivsetup
+# qhasm: enter crypto_stream_lexv2_e_v2_schwabe_sparc_2_ECRYPT_ivsetup
 .section ".text"
 .align 32
-.global ECRYPT_ivsetup
-ECRYPT_ivsetup:
+.global crypto_stream_lexv2_e_v2_schwabe_sparc_2_ECRYPT_ivsetup
+crypto_stream_lexv2_e_v2_schwabe_sparc_2_ECRYPT_ivsetup:
 save %sp,-528,%sp
 
 # qhasm: constants = (aes_little_constants & 0xfffffc0000000000) >> 32

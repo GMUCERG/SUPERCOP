@@ -2,6 +2,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include "crypto_dh.h"
+#include "randombytes.h"
 
 /* #define HAVE_MAIN */ 
 

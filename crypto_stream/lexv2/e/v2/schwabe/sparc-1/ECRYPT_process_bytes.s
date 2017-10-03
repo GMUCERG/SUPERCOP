@@ -1,5 +1,5 @@
 # 
-#  lex_ultrasparc/ECRYPT_process_bytes.s version 20080315
+#  lex_ultrasparc/crypto_stream_lexv2_e_v2_schwabe_sparc_1_ECRYPT_process_bytes.s version 20080315
 #  Peter Schwabe
 #  Public domain
 # 
@@ -218,11 +218,11 @@
 
 # qhasm: stack320 tmp
 
-# qhasm: enter ECRYPT_process_bytes
+# qhasm: enter crypto_stream_lexv2_e_v2_schwabe_sparc_1_ECRYPT_process_bytes
 .section ".text"
 .align 32
-.global ECRYPT_process_bytes
-ECRYPT_process_bytes:
+.global crypto_stream_lexv2_e_v2_schwabe_sparc_1_ECRYPT_process_bytes
+crypto_stream_lexv2_e_v2_schwabe_sparc_1_ECRYPT_process_bytes:
 save %sp,-608,%sp
 
 # qhasm: =? length - 0

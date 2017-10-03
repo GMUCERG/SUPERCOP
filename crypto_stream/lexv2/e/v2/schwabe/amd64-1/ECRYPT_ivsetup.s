@@ -233,13 +233,13 @@
 
 # qhasm: int64 b3
 
-# qhasm: enter ECRYPT_ivsetup
+# qhasm: enter crypto_stream_lexv2_e_v2_schwabe_amd64_1_ECRYPT_ivsetup
 .text
 .p2align 5
-.globl _ECRYPT_ivsetup
-.globl ECRYPT_ivsetup
-_ECRYPT_ivsetup:
-ECRYPT_ivsetup:
+.globl _crypto_stream_lexv2_e_v2_schwabe_amd64_1_ECRYPT_ivsetup
+.globl crypto_stream_lexv2_e_v2_schwabe_amd64_1_ECRYPT_ivsetup
+_crypto_stream_lexv2_e_v2_schwabe_amd64_1_ECRYPT_ivsetup:
+crypto_stream_lexv2_e_v2_schwabe_amd64_1_ECRYPT_ivsetup:
 mov %rsp,%r11
 and $31,%r11
 add $448,%r11

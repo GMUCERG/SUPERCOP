@@ -1,9 +1,9 @@
 .text
 .align 3
-.globl _ECRYPT_ivsetup_qhasm
-.globl ECRYPT_ivsetup_qhasm
-_ECRYPT_ivsetup_qhasm:
-ECRYPT_ivsetup_qhasm:
+.globl _crypto_stream_lexv2_e_v2_schwabe_ppc32macos_1_ECRYPT_ivsetup_qhasm
+.globl crypto_stream_lexv2_e_v2_schwabe_ppc32macos_1_ECRYPT_ivsetup_qhasm
+_crypto_stream_lexv2_e_v2_schwabe_ppc32macos_1_ECRYPT_ivsetup_qhasm:
+crypto_stream_lexv2_e_v2_schwabe_ppc32macos_1_ECRYPT_ivsetup_qhasm:
 stwu r1,-384(r1)
 stw r13,0(r1)
 stw r14,4(r1)

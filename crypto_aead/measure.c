@@ -1,16 +1,8 @@
 #include <stdlib.h>
-#include "randombytes.h"
+#include "kernelrandombytes.h"
 #include "cpucycles.h"
 #include "crypto_aead.h"
-
-extern void printentry(long long,const char *,long long *,long long);
-extern unsigned char *alignedcalloc(unsigned long long);
-extern const char *primitiveimplementation;
-extern const char *implementationversion;
-extern const char *sizenames[];
-extern const long long sizes[];
-extern void allocate(void);
-extern void measure(void);
+#include "measure.h"
 
 const char *primitiveimplementation = crypto_aead_IMPLEMENTATION;
 const char *implementationversion = crypto_aead_VERSION;
@@ -62,12 +54,12 @@ void measure(void)
         if (direction != 0) ++adlen;
         if (mlen > MAXTEST_BYTES) break;
         if (adlen > MAXTEST_BYTES) break;
-        randombytes(k,crypto_aead_KEYBYTES);
-        randombytes(nsec,crypto_aead_NSECBYTES);
-        randombytes(npub,crypto_aead_NPUBBYTES);
-        randombytes(m,mlen);
-        randombytes(ad,adlen);
-        randombytes(c,mlen + crypto_aead_ABYTES);
+        kernelrandombytes(k,crypto_aead_KEYBYTES);
+        kernelrandombytes(nsec,crypto_aead_NSECBYTES);
+        kernelrandombytes(npub,crypto_aead_NPUBBYTES);
+        kernelrandombytes(m,mlen);
+        kernelrandombytes(ad,adlen);
+        kernelrandombytes(c,mlen + crypto_aead_ABYTES);
         for (i = 0;i <= TIMINGS;++i) {
           cycles[i] = cpucycles();
           crypto_aead_encrypt(c,&clen,m,mlen,ad,adlen,nsec,npub,k);

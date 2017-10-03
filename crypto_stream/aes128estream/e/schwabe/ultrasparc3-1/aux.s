@@ -12384,10 +12384,10 @@ aes_big_constants:
 	.section	".text"
 	.align 4
 	.align 32
-	.global ECRYPT_keysetup
-	.type	ECRYPT_keysetup, #function
+	.global crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_keysetup
+	.type	crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_keysetup, #function
 	.proc	020
-ECRYPT_keysetup:
+crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_keysetup:
 .LLFB4:
 .LLM1:
 	!#PROLOGUE# 0
@@ -12780,13 +12780,13 @@ ECRYPT_keysetup:
 	return	%i7+8
 	nop
 .LLFE4:
-	.size	ECRYPT_keysetup, .-ECRYPT_keysetup
+	.size	crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_keysetup, .-crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_keysetup
 	.align 4
 	.align 32
-	.global ECRYPT_init
-	.type	ECRYPT_init, #function
+	.global crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_init
+	.type	crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_init, #function
 	.proc	020
-ECRYPT_init:
+crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_init:
 .LLFB6:
 .LLM182:
 	!#PROLOGUE# 0
@@ -12795,13 +12795,13 @@ ECRYPT_init:
 	retl
 	nop
 .LLFE6:
-	.size	ECRYPT_init, .-ECRYPT_init
+	.size	crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_init, .-crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_init
 	.align 4
 	.align 32
-	.global ECRYPT_ivsetup
-	.type	ECRYPT_ivsetup, #function
+	.global crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_ivsetup
+	.type	crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_ivsetup, #function
 	.proc	020
-ECRYPT_ivsetup:
+crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_ivsetup:
 .LLFB7:
 .LLM184:
 	!#PROLOGUE# 0
@@ -12912,7 +12912,7 @@ ECRYPT_ivsetup:
 	return	%i7+8
 	nop
 .LLFE7:
-	.size	ECRYPT_ivsetup, .-ECRYPT_ivsetup
+	.size	crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_ivsetup, .-crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_ivsetup
 	.section	".debug_frame"
 .LLframe0:
 	.uaword	.LLECIE0-.LLSCIE0
@@ -14321,14 +14321,14 @@ ECRYPT_ivsetup:
 	.byte	0x8
 	.byte	0x7
 	.byte	0x2
-	.asciz	"ECRYPT_ctx"
+	.asciz	"crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_ctx"
 	.byte	0x4
 	.byte	0x3d
 	.uaword	0x159
 	.byte	0x9
 	.uaword	0x24c
 	.byte	0x1
-	.asciz	"ECRYPT_keysetup"
+	.asciz	"crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_keysetup"
 	.byte	0x1
 	.uahalf	0x31f
 	.byte	0x1
@@ -14470,7 +14470,7 @@ ECRYPT_ivsetup:
 	.byte	0x0
 	.byte	0x11
 	.byte	0x1
-	.asciz	"ECRYPT_init"
+	.asciz	"crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_init"
 	.byte	0x1
 	.uahalf	0x31a
 	.byte	0x1
@@ -14484,7 +14484,7 @@ ECRYPT_ivsetup:
 	.byte	0x9
 	.uaword	0x33c
 	.byte	0x1
-	.asciz	"ECRYPT_ivsetup"
+	.asciz	"crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_ivsetup"
 	.byte	0x1
 	.uahalf	0x37d
 	.byte	0x1
@@ -14804,11 +14804,11 @@ ECRYPT_ivsetup:
 	.uaword	.LLdebug_info0
 	.uaword	0x3ad
 	.uaword	0x25d
-	.asciz	"ECRYPT_keysetup"
+	.asciz	"crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_keysetup"
 	.uaword	0x2e9
-	.asciz	"ECRYPT_init"
+	.asciz	"crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_init"
 	.uaword	0x33c
-	.asciz	"ECRYPT_ivsetup"
+	.asciz	"crypto_stream_aes128estream_e_schwabe_ultrasparc3_1_ECRYPT_ivsetup"
 	.uaword	0x383
 	.asciz	"aes_big_constants"
 	.uaword	0x0

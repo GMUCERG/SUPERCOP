@@ -1,5 +1,5 @@
 /*
- * try-anything.c version 20140425
+ * try-anything.c version 20170717
  * D. J. Bernstein
  * Some portions adapted from TweetNaCl by Bernstein, Janssen, Lange, Schwabe.
  * Public domain.
@@ -13,6 +13,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/resource.h>
+#include "kernelrandombytes.h"
 #include "cpucycles.h"
 #include "crypto_uint8.h"
 #include "crypto_uint32.h"
@@ -108,14 +109,6 @@ static void increment(u8 *n)
               if (!++n[6])
                 if (!++n[7])
                   ;
-}
-
-void randombytes(unsigned char *x,unsigned long long xlen)
-{
-  const static unsigned char randombytes_k[33] = "answer randombytes from crypto_*";
-  static unsigned char randombytes_n[8];
-  salsa20(x,xlen,randombytes_n,randombytes_k);
-  increment(randombytes_n);
 }
 
 static void testvector(unsigned char *x,unsigned long long xlen)
@@ -270,6 +263,8 @@ void limits()
 #endif
 }
 
+static unsigned char randombyte[1];
+
 int main()
 {
   long long i;
@@ -283,6 +278,7 @@ int main()
   cycles[1] = cpucycles();
   cyclespersecond = cpucycles_persecond();
 
+  kernelrandombytes(randombyte,1);
   preallocate();
   limits();
 

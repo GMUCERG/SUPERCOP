@@ -241,13 +241,13 @@
 
 # qhasm: stack128 tmpin
 
-# qhasm: enter ECRYPT_init
+# qhasm: enter crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_init
 .text
 .p2align 5
-.globl _ECRYPT_init
-.globl ECRYPT_init
-_ECRYPT_init:
-ECRYPT_init:
+.globl _crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_init
+.globl crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_init
+_crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_init:
+crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_init:
 mov %rsp,%r11
 and $31,%r11
 add $256,%r11
@@ -259,13 +259,13 @@ mov %rdi,%rax
 mov %rsi,%rdx
 ret
 
-# qhasm: enter ECRYPT_ivsetup
+# qhasm: enter crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_ivsetup
 .text
 .p2align 5
-.globl _ECRYPT_ivsetup
-.globl ECRYPT_ivsetup
-_ECRYPT_ivsetup:
-ECRYPT_ivsetup:
+.globl _crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_ivsetup
+.globl crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_ivsetup
+_crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_ivsetup:
+crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_ivsetup:
 mov %rsp,%r11
 and $31,%r11
 add $256,%r11
@@ -327,13 +327,13 @@ mov %rdi,%rax
 mov %rsi,%rdx
 ret
 
-# qhasm: enter ECRYPT_keysetup
+# qhasm: enter crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_keysetup
 .text
 .p2align 5
-.globl _ECRYPT_keysetup
-.globl ECRYPT_keysetup
-_ECRYPT_keysetup:
-ECRYPT_keysetup:
+.globl _crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_keysetup
+.globl crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_keysetup
+_crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_keysetup:
+crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_keysetup:
 mov %rsp,%r11
 and $31,%r11
 add $256,%r11
@@ -1505,13 +1505,13 @@ mov %rdi,%rax
 mov %rsi,%rdx
 ret
 
-# qhasm: enter ECRYPT_process_bytes stackaligned4096 aes_constants
+# qhasm: enter crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_process_bytes stackaligned4096 aes_constants
 .text
 .p2align 5
-.globl _ECRYPT_process_bytes
-.globl ECRYPT_process_bytes
-_ECRYPT_process_bytes:
-ECRYPT_process_bytes:
+.globl _crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_process_bytes
+.globl crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_process_bytes
+_crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_process_bytes:
+crypto_stream_aes128estream_e_schwabe_core2_ECRYPT_process_bytes:
 mov %rsp,%r11
 sub $aes_constants,%r11
 and $4095,%r11

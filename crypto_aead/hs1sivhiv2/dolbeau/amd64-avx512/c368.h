@@ -6,194 +6,156 @@ Public domain.
 */
 
 /* 368 bytes, no xor */
+#define VEC16_ROT(a,imm) _mm512_rol_epi32(a, imm)
 
-#define VEC8_ROT(a,imm) _mm256_or_si256(_mm256_slli_epi32(a,imm),_mm256_srli_epi32(a,(32-imm)))
+#define VEC16_LINE1(a,b,c,d)                                             \
+  x_##a = _mm512_add_epi32(x_##a, x_##b); x_##d = VEC16_ROT(_mm512_xor_si512(x_##d, x_##a), 16)
+#define VEC16_LINE2(a,b,c,d)                                             \
+  x_##c = _mm512_add_epi32(x_##c, x_##d); x_##b = VEC16_ROT(_mm512_xor_si512(x_##b, x_##c), 12)
+#define VEC16_LINE3(a,b,c,d)                                             \
+  x_##a = _mm512_add_epi32(x_##a, x_##b); x_##d = VEC16_ROT(_mm512_xor_si512(x_##d, x_##a),  8)
+#define VEC16_LINE4(a,b,c,d)                                             \
+  x_##c = _mm512_add_epi32(x_##c, x_##d); x_##b = VEC16_ROT(_mm512_xor_si512(x_##b, x_##c),  7)
 
-/* implements a vector quarter round by-the-book (naive!) */
-#define VEC8_QUARTERROUND_NAIVE(a,b,c,d)                                           \
-  x_##a = _mm256_add_epi32(x_##a, x_##b); t_##a = _mm256_xor_si256(x_##d, x_##a); x_##d = VEC8_ROT(t_##a, 16); \
-  x_##c = _mm256_add_epi32(x_##c, x_##d); t_##c = _mm256_xor_si256(x_##b, x_##c); x_##b = VEC8_ROT(t_##c, 12); \
-  x_##a = _mm256_add_epi32(x_##a, x_##b); t_##a = _mm256_xor_si256(x_##d, x_##a); x_##d = VEC8_ROT(t_##a,  8); \
-  x_##c = _mm256_add_epi32(x_##c, x_##d); t_##c = _mm256_xor_si256(x_##b, x_##c); x_##b = VEC8_ROT(t_##c,  7)
+#define VEC16_4L1(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4) \
+	{ __m512i t0, t1, t2, t3;				   \
+		x_##a1 = _mm512_add_epi32(x_##a1, x_##b1);	   \
+		x_##a2 = _mm512_add_epi32(x_##a2, x_##b2);	   \
+		x_##a3 = _mm512_add_epi32(x_##a3, x_##b3);	   \
+		x_##a4 = _mm512_add_epi32(x_##a4, x_##b4);	   \
+		t0 = _mm512_xor_si512(x_##d1, x_##a1);		   \
+		t1 = _mm512_xor_si512(x_##d2, x_##a2);		   \
+		t2 = _mm512_xor_si512(x_##d3, x_##a3);		   \
+		t3 = _mm512_xor_si512(x_##d4, x_##a4);		   \
+		x_##d1 = VEC16_ROT(t0, 16);			   \
+		x_##d2 = VEC16_ROT(t1, 16);			   \
+		x_##d3 = VEC16_ROT(t2, 16);			   \
+		x_##d4 = VEC16_ROT(t3, 16);			   \
+	}
+#define VEC16_4L2(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4) \
+	{ __m512i t0, t1, t2, t3;				   \
+		x_##c1 = _mm512_add_epi32(x_##c1, x_##d1);	   \
+		x_##c2 = _mm512_add_epi32(x_##c2, x_##d2);	   \
+		x_##c3 = _mm512_add_epi32(x_##c3, x_##d3);	   \
+		x_##c4 = _mm512_add_epi32(x_##c4, x_##d4);	   \
+		t0 = _mm512_xor_si512(x_##b1, x_##c1);		   \
+		t1 = _mm512_xor_si512(x_##b2, x_##c2);		   \
+		t2 = _mm512_xor_si512(x_##b3, x_##c3);		   \
+		t3 = _mm512_xor_si512(x_##b4, x_##c4);		   \
+		x_##b1 = VEC16_ROT(t0, 12);			   \
+		x_##b2 = VEC16_ROT(t1, 12);			   \
+		x_##b3 = VEC16_ROT(t2, 12);			   \
+		x_##b4 = VEC16_ROT(t3, 12);			   \
+	}
+#define VEC16_4L3(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4) \
+	{ __m512i t0, t1, t2, t3;				   \
+		x_##a1 = _mm512_add_epi32(x_##a1, x_##b1);	   \
+		x_##a2 = _mm512_add_epi32(x_##a2, x_##b2);	   \
+		x_##a3 = _mm512_add_epi32(x_##a3, x_##b3);	   \
+		x_##a4 = _mm512_add_epi32(x_##a4, x_##b4);	   \
+		t0 = _mm512_xor_si512(x_##d1, x_##a1);		   \
+		t1 = _mm512_xor_si512(x_##d2, x_##a2);		   \
+		t2 = _mm512_xor_si512(x_##d3, x_##a3);		   \
+		t3 = _mm512_xor_si512(x_##d4, x_##a4);		   \
+		x_##d1 = VEC16_ROT(t0, 8);			   \
+		x_##d2 = VEC16_ROT(t1, 8);			   \
+		x_##d3 = VEC16_ROT(t2, 8);			   \
+		x_##d4 = VEC16_ROT(t3, 8);			   \
+	}
+#define VEC16_4L4(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4) \
+	{ __m512i t0, t1, t2, t3;				   \
+		x_##c1 = _mm512_add_epi32(x_##c1, x_##d1);	   \
+		x_##c2 = _mm512_add_epi32(x_##c2, x_##d2);	   \
+		x_##c3 = _mm512_add_epi32(x_##c3, x_##d3);	   \
+		x_##c4 = _mm512_add_epi32(x_##c4, x_##d4);	   \
+		t0 = _mm512_xor_si512(x_##b1, x_##c1);		   \
+		t1 = _mm512_xor_si512(x_##b2, x_##c2);		   \
+		t2 = _mm512_xor_si512(x_##b3, x_##c3);		   \
+		t3 = _mm512_xor_si512(x_##b4, x_##c4);		   \
+		x_##b1 = VEC16_ROT(t0, 7);			   \
+		x_##b2 = VEC16_ROT(t1, 7);			   \
+		x_##b3 = VEC16_ROT(t2, 7);			   \
+		x_##b4 = VEC16_ROT(t3, 7);			   \
+	}
 
-/* same, but replace 2 of the shift/shift/or "rotation" by byte shuffles (8 & 16) (better) */
-#define VEC8_QUARTERROUND_SHUFFLE(a,b,c,d)                                \
-   x_##a = _mm256_add_epi32(x_##a, x_##b); t_##a = _mm256_xor_si256(x_##d, x_##a); x_##d = _mm256_shuffle_epi8(t_##a, rot16); \
-   x_##c = _mm256_add_epi32(x_##c, x_##d); t_##c = _mm256_xor_si256(x_##b, x_##c); x_##b = VEC8_ROT(t_##c, 12); \
-   x_##a = _mm256_add_epi32(x_##a, x_##b); t_##a = _mm256_xor_si256(x_##d, x_##a); x_##d = _mm256_shuffle_epi8(t_##a, rot8); \
-   x_##c = _mm256_add_epi32(x_##c, x_##d); t_##c = _mm256_xor_si256(x_##b, x_##c); x_##b = VEC8_ROT(t_##c,  7)
+#define VEC16_ROUND_SEQ(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)     \
+  VEC16_LINE1(a1,b1,c1,d1);                                              \
+  VEC16_LINE1(a2,b2,c2,d2);                                              \
+  VEC16_LINE1(a3,b3,c3,d3);                                              \
+  VEC16_LINE1(a4,b4,c4,d4);                                              \
+  VEC16_LINE2(a1,b1,c1,d1);                                              \
+  VEC16_LINE2(a2,b2,c2,d2);                                              \
+  VEC16_LINE2(a3,b3,c3,d3);                                              \
+  VEC16_LINE2(a4,b4,c4,d4);                                              \
+  VEC16_LINE3(a1,b1,c1,d1);                                              \
+  VEC16_LINE3(a2,b2,c2,d2);                                              \
+  VEC16_LINE3(a3,b3,c3,d3);                                              \
+  VEC16_LINE3(a4,b4,c4,d4);                                              \
+  VEC16_LINE4(a1,b1,c1,d1);                                              \
+  VEC16_LINE4(a2,b2,c2,d2);                                              \
+  VEC16_LINE4(a3,b3,c3,d3);                                              \
+  VEC16_LINE4(a4,b4,c4,d4)
 
-/* same, but replace 2 of the shift/shift/or "rotation" by byte & word shuffles (8 & 16) (not as good as previous) */
-#define VEC8_QUARTERROUND_SHUFFLE2(a,b,c,d)                                \
-  x_##a = _mm256_add_epi32(x_##a, x_##b); t_##a = _mm256_xor_si256(x_##d, x_##a); x_##d = _mm256_shufflehi_epi16(_mm256_shufflelo_epi16(t_##a,0xb1),0xb1); \
-   x_##c = _mm256_add_epi32(x_##c, x_##d); t_##c = _mm256_xor_si256(x_##b, x_##c); x_##b = VEC8_ROT(t_##c, 12); \
-   x_##a = _mm256_add_epi32(x_##a, x_##b); t_##a = _mm256_xor_si256(x_##d, x_##a); x_##d = _mm256_shuffle_epi8(t_##a, rot8); \
-   x_##c = _mm256_add_epi32(x_##c, x_##d); t_##c = _mm256_xor_si256(x_##b, x_##c); x_##b = VEC8_ROT(t_##c,  7)
+#define VEC16_ROUND_INTER(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)     \
+	VEC16_4L1(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)\
+	VEC16_4L2(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)\
+	VEC16_4L3(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)\
+	VEC16_4L4(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)
 
-#define VEC8_QUARTERROUND(a,b,c,d) VEC8_QUARTERROUND_SHUFFLE(a,b,c,d)
-
-/* #define VEC8_LINE1(a,b,c,d)                                             \ */
-/*   x_##a = _mm256_add_epi32(x_##a, x_##b); t_##a = _mm256_xor_si256(x_##d, x_##a); x_##d = _mm256_shuffle_epi8(t_##a, rot16) */
-/* #define VEC8_LINE2(a,b,c,d)                                             \ */
-/*   x_##c = _mm256_add_epi32(x_##c, x_##d); t_##c = _mm256_xor_si256(x_##b, x_##c); x_##b = VEC8_ROT(t_##c, 12) */
-/* #define VEC8_LINE3(a,b,c,d)                                             \ */
-/*   x_##a = _mm256_add_epi32(x_##a, x_##b); t_##a = _mm256_xor_si256(x_##d, x_##a); x_##d = _mm256_shuffle_epi8(t_##a, rot8) */
-/* #define VEC8_LINE4(a,b,c,d)                                             \ */
-/*   x_##c = _mm256_add_epi32(x_##c, x_##d); t_##c = _mm256_xor_si256(x_##b, x_##c); x_##b = VEC8_ROT(t_##c,  7) */
-/* not expliciting t_##X seems a bit faster... */
-#define VEC8_LINE1(a,b,c,d)                                             \
-  x_##a = _mm256_add_epi32(x_##a, x_##b); x_##d = _mm256_shuffle_epi8(_mm256_xor_si256(x_##d, x_##a), rot16)
-#define VEC8_LINE2(a,b,c,d)                                             \
-  x_##c = _mm256_add_epi32(x_##c, x_##d); x_##b = VEC8_ROT(_mm256_xor_si256(x_##b, x_##c), 12)
-#define VEC8_LINE3(a,b,c,d)                                             \
-  x_##a = _mm256_add_epi32(x_##a, x_##b); x_##d = _mm256_shuffle_epi8(_mm256_xor_si256(x_##d, x_##a), rot8)
-#define VEC8_LINE4(a,b,c,d)                                             \
-  x_##c = _mm256_add_epi32(x_##c, x_##d); x_##b = VEC8_ROT(_mm256_xor_si256(x_##b, x_##c),  7)
-
-#define VEC8_ROUND_SEQ(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)     \
-  VEC8_LINE1(a1,b1,c1,d1);                                              \
-  VEC8_LINE1(a2,b2,c2,d2);                                              \
-  VEC8_LINE1(a3,b3,c3,d3);                                              \
-  VEC8_LINE1(a4,b4,c4,d4);                                              \
-  VEC8_LINE2(a1,b1,c1,d1);                                              \
-  VEC8_LINE2(a2,b2,c2,d2);                                              \
-  VEC8_LINE2(a3,b3,c3,d3);                                              \
-  VEC8_LINE2(a4,b4,c4,d4);                                              \
-  VEC8_LINE3(a1,b1,c1,d1);                                              \
-  VEC8_LINE3(a2,b2,c2,d2);                                              \
-  VEC8_LINE3(a3,b3,c3,d3);                                              \
-  VEC8_LINE3(a4,b4,c4,d4);                                              \
-  VEC8_LINE4(a1,b1,c1,d1);                                              \
-  VEC8_LINE4(a2,b2,c2,d2);                                              \
-  VEC8_LINE4(a3,b3,c3,d3);                                              \
-  VEC8_LINE4(a4,b4,c4,d4)
-
-#define VEC8_ROUND_HALF(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)     \
-  VEC8_LINE1(a1,b1,c1,d1);                                              \
-  VEC8_LINE1(a2,b2,c2,d2);                                              \
-  VEC8_LINE2(a1,b1,c1,d1);                                              \
-  VEC8_LINE2(a2,b2,c2,d2);                                              \
-  VEC8_LINE3(a1,b1,c1,d1);                                              \
-  VEC8_LINE3(a2,b2,c2,d2);                                              \
-  VEC8_LINE4(a1,b1,c1,d1);                                              \
-  VEC8_LINE4(a2,b2,c2,d2);                                              \
-  VEC8_LINE1(a3,b3,c3,d3);                                              \
-  VEC8_LINE1(a4,b4,c4,d4);                                              \
-  VEC8_LINE2(a3,b3,c3,d3);                                              \
-  VEC8_LINE2(a4,b4,c4,d4);                                              \
-  VEC8_LINE3(a3,b3,c3,d3);                                              \
-  VEC8_LINE3(a4,b4,c4,d4);                                              \
-  VEC8_LINE4(a3,b3,c3,d3);                                              \
-  VEC8_LINE4(a4,b4,c4,d4)
-
-#define VEC8_ROUND_HALFANDHALF(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4) \
-  VEC8_LINE1(a1,b1,c1,d1);                                              \
-  VEC8_LINE1(a2,b2,c2,d2);                                              \
-  VEC8_LINE2(a1,b1,c1,d1);                                              \
-  VEC8_LINE2(a2,b2,c2,d2);                                              \
-  VEC8_LINE1(a3,b3,c3,d3);                                              \
-  VEC8_LINE1(a4,b4,c4,d4);                                              \
-  VEC8_LINE2(a3,b3,c3,d3);                                              \
-  VEC8_LINE2(a4,b4,c4,d4);                                              \
-  VEC8_LINE3(a1,b1,c1,d1);                                              \
-  VEC8_LINE3(a2,b2,c2,d2);                                              \
-  VEC8_LINE4(a1,b1,c1,d1);                                              \
-  VEC8_LINE4(a2,b2,c2,d2);                                              \
-  VEC8_LINE3(a3,b3,c3,d3);                                              \
-  VEC8_LINE3(a4,b4,c4,d4);                                              \
-  VEC8_LINE4(a3,b3,c3,d3);                                              \
-  VEC8_LINE4(a4,b4,c4,d4)
-
-#define VEC8_ROUND(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4) VEC8_ROUND_SEQ(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)
+/* SEQ seems faster than INTER on KNL, and nearly identical on SKX */
+#define VEC16_ROUND(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4) VEC16_ROUND_SEQ(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)
 
   /* constant for shuffling bytes (replacing multiple-of-8 rotates) */
-  __m256i rot16 = _mm256_set_epi8(13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2,13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2);
-  __m256i rot8  = _mm256_set_epi8(14,13,12,15,10,9,8,11,6,5,4,7,2,1,0,3,14,13,12,15,10,9,8,11,6,5,4,7,2,1,0,3);
   u32 in12;
-#if 1
   /* the naive way seems as fast (if not a bit faster) than the vector way */
-__m256i x_0 = _mm256_set1_epi32(x[0]);
-__m256i x_1 = _mm256_set1_epi32(x[1]);
-__m256i x_2 = _mm256_set1_epi32(x[2]);
-__m256i x_3 = _mm256_set1_epi32(x[3]);
-__m256i x_4 = _mm256_set1_epi32(x[4]);
-__m256i x_5 = _mm256_set1_epi32(x[5]);
-__m256i x_6 = _mm256_set1_epi32(x[6]);
-__m256i x_7 = _mm256_set1_epi32(x[7]);
-__m256i x_8 = _mm256_set1_epi32(x[8]);
-__m256i x_9 = _mm256_set1_epi32(x[9]);
-__m256i x_10 = _mm256_set1_epi32(x[10]);
-__m256i x_11 = _mm256_set1_epi32(x[11]);
- __m256i x_12;// = _mm256_set1_epi32(x[12]); /* useless */
- __m256i x_13 = _mm256_set1_epi32(x[13]);
-__m256i x_14 = _mm256_set1_epi32(x[14]);
-__m256i x_15 = _mm256_set1_epi32(x[15]);
-#else
-  /* element broadcast immediate for _mm_shuffle_epi32 are in order:
-     0x00, 0x55, 0xaa, 0xff */
-  __m256i x_0 = _mm256_load_si256((__m256i*)(x +  0));
-  /* intra-lane shuffle (does both sides at once) */
-  __m256i x_1 = _mm256_shuffle_epi32(x_0, 0x55);
-  __m256i x_2 = _mm256_shuffle_epi32(x_0, 0xaa);
-  __m256i x_3 = _mm256_shuffle_epi32(x_0, 0xff);
-  x_0  = _mm256_shuffle_epi32(x_0, 0x00);
-  /* inter-lane shuffle */
-  __m256i x_4 = _mm256_permute2x128_si256(x_0, x_0, 0x11);
-  __m256i x_5 = _mm256_permute2x128_si256(x_1, x_1, 0x11);
-  __m256i x_6 = _mm256_permute2x128_si256(x_2, x_2, 0x11);
-  __m256i x_7 = _mm256_permute2x128_si256(x_3, x_3, 0x11);
-  x_0 = _mm256_permute2x128_si256(x_0, x_0, 0x00);
-  x_1 = _mm256_permute2x128_si256(x_1, x_1, 0x00);
-  x_2 = _mm256_permute2x128_si256(x_2, x_2, 0x00);
-  x_3 = _mm256_permute2x128_si256(x_3, x_3, 0x00);
-  __m256i x_8 = _mm256_load_si256((__m256i*)(x +  8));
-  /* intra-lane shuffle (does both sides at once) */
-  __m256i x_9 = _mm256_shuffle_epi32(x_8, 0x55);
-  __m256i x_10 = _mm256_shuffle_epi32(x_8, 0xaa);
-  __m256i x_11 = _mm256_shuffle_epi32(x_8, 0xff);
-  x_8  = _mm256_shuffle_epi32(x_8, 0x00);
-  /* inter-lane shuffle */
-  __m256i x_12;// = _mm256_permute2x128_si256(x_8, x_8, 0x11); /* useless */
-  __m256i x_13 = _mm256_permute2x128_si256(x_9, x_9, 0x11);
-  __m256i x_14 = _mm256_permute2x128_si256(x_10, x_10, 0x11);
-  __m256i x_15 = _mm256_permute2x128_si256(x_11, x_11, 0x11);
-  x_8 = _mm256_permute2x128_si256(x_8, x_8, 0x00);
-  x_9 = _mm256_permute2x128_si256(x_9, x_9, 0x00);
-  x_10 = _mm256_permute2x128_si256(x_10, x_10, 0x00);
-  x_11 = _mm256_permute2x128_si256(x_11, x_11, 0x00);
-#endif
-  __m256i orig0 = x_0;
-  __m256i orig1 = x_1;
-  __m256i orig2 = x_2;
-  __m256i orig3 = x_3;
-  __m256i orig4 = x_4;
-  __m256i orig5 = x_5;
-  __m256i orig6 = x_6;
-  __m256i orig7 = x_7;
-  __m256i orig8 = x_8;
-  __m256i orig9 = x_9;
-  __m256i orig10 = x_10;
-  __m256i orig11 = x_11;
-  __m256i orig12;// = x_12; /* useless */
-  __m256i orig13 = x_13;
-  __m256i orig14 = x_14;
-  __m256i orig15 = x_15;
-  __m256i t_0;
-  __m256i t_1;
-  __m256i t_2;
-  __m256i t_3;
-  __m256i t_4;
-  __m256i t_5;
-  __m256i t_6;
-  __m256i t_7;
-  __m256i t_8;
-  __m256i t_9;
-  __m256i t_10;
-  __m256i t_11;
-  __m256i t_12;
-  __m256i t_13;
-  __m256i t_14;
-  __m256i t_15;
+  __m512i x_0 = _mm512_set1_epi32(x[0]);
+  __m512i x_1 = _mm512_set1_epi32(x[1]);
+  __m512i x_2 = _mm512_set1_epi32(x[2]);
+  __m512i x_3 = _mm512_set1_epi32(x[3]);
+  __m512i x_4 = _mm512_set1_epi32(x[4]);
+  __m512i x_5 = _mm512_set1_epi32(x[5]);
+  __m512i x_6 = _mm512_set1_epi32(x[6]);
+  __m512i x_7 = _mm512_set1_epi32(x[7]);
+  __m512i x_8 = _mm512_set1_epi32(x[8]);
+  __m512i x_9 = _mm512_set1_epi32(x[9]);
+  __m512i x_10 = _mm512_set1_epi32(x[10]);
+  __m512i x_11 = _mm512_set1_epi32(x[11]);
+  __m512i x_12;// = _mm512_set1_epi32(x[12]); /* useless */
+  __m512i x_13 = _mm512_set1_epi32(x[13]);
+  __m512i x_14 = _mm512_set1_epi32(x[14]);
+  __m512i x_15 = _mm512_set1_epi32(x[15]);
+  __m512i orig0 = x_0;
+  __m512i orig1 = x_1;
+  __m512i orig2 = x_2;
+  __m512i orig3 = x_3;
+  __m512i orig4 = x_4;
+  __m512i orig5 = x_5;
+  __m512i orig6 = x_6;
+  __m512i orig7 = x_7;
+  __m512i orig8 = x_8;
+  __m512i orig9 = x_9;
+  __m512i orig10 = x_10;
+  __m512i orig11 = x_11;
+  __m512i orig12;// = x_12; /* useless */
+  __m512i orig13 = x_13;
+  __m512i orig14 = x_14;
+  __m512i orig15 = x_15;
+  __m512i t_0;
+  __m512i t_1;
+  __m512i t_2;
+  __m512i t_3;
+  __m512i t_4;
+  __m512i t_5;
+  __m512i t_6;
+  __m512i t_7;
+  __m512i t_8;
+  __m512i t_9;
+  __m512i t_10;
+  __m512i t_11;
+  __m512i t_12;
+  __m512i t_13;
+  __m512i t_14;
+  __m512i t_15;
 
     x_0 = orig0;
     x_1 = orig1;
@@ -212,115 +174,137 @@ __m256i x_15 = _mm256_set1_epi32(x[15]);
     x_14 = orig14;
     x_15 = orig15;
 
-
-
-    const __m256i addv12 = _mm256_set_epi32(7,6,5,4,3,2,1,0);
+    const __m512i addv12 = _mm512_set_epi32(15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0);
     in12 = x[12];
-    t_12 = _mm256_broadcastd_epi32(_mm_cvtsi32_si128(in12));
-    x_12 = _mm256_add_epi64(addv12, t_12);
+    t_12 = _mm512_broadcastd_epi32(_mm_cvtsi32_si128(in12));
+    x_12 = _mm512_add_epi64(addv12, t_12);
     orig12 = x_12;
-    x[12]+=8;
+    x[12]+=16;
 
     for (i = 0 ; i < 20 ; i+=2) {
-      VEC8_ROUND( 0, 4, 8,12, 1, 5, 9,13, 2, 6,10,14, 3, 7,11,15);
-      VEC8_ROUND( 0, 5,10,15, 1, 6,11,12, 2, 7, 8,13, 3, 4, 9,14);
-    }
-#define ONEQUAD_UNPCK(a,b,c,d)                                          \
-    {                                                                   \
-      x_##a = _mm256_add_epi32(x_##a, orig##a);                         \
-      x_##b = _mm256_add_epi32(x_##b, orig##b);                         \
-      x_##c = _mm256_add_epi32(x_##c, orig##c);                         \
-      x_##d = _mm256_add_epi32(x_##d, orig##d);                         \
-      t_##a = _mm256_unpacklo_epi32(x_##a, x_##b);                      \
-      t_##b = _mm256_unpacklo_epi32(x_##c, x_##d);                      \
-      t_##c = _mm256_unpackhi_epi32(x_##a, x_##b);                      \
-      t_##d = _mm256_unpackhi_epi32(x_##c, x_##d);                      \
-      x_##a = _mm256_unpacklo_epi64(t_##a, t_##b);                      \
-      x_##b = _mm256_unpackhi_epi64(t_##a, t_##b);                      \
-      x_##c = _mm256_unpacklo_epi64(t_##c, t_##d);                      \
-      x_##d = _mm256_unpackhi_epi64(t_##c, t_##d);                      \
-    }
-#define ONEOCTO(a,b,c,d,a2,b2,c2,d2)                                    \
-    {                                                                   \
-      ONEQUAD_UNPCK(a,b,c,d);                                           \
-      ONEQUAD_UNPCK(a2,b2,c2,d2);                                       \
-      t_##a  = _mm256_permute2x128_si256(x_##a, x_##a2, 0x20);          \
-      t_##a2 = _mm256_permute2x128_si256(x_##a, x_##a2, 0x31);          \
-      t_##b  = _mm256_permute2x128_si256(x_##b, x_##b2, 0x20);          \
-      t_##b2 = _mm256_permute2x128_si256(x_##b, x_##b2, 0x31);          \
-      t_##c  = _mm256_permute2x128_si256(x_##c, x_##c2, 0x20);          \
-      t_##c2 = _mm256_permute2x128_si256(x_##c, x_##c2, 0x31);          \
-      t_##d  = _mm256_permute2x128_si256(x_##d, x_##d2, 0x20);          \
-      t_##d2 = _mm256_permute2x128_si256(x_##d, x_##d2, 0x31);          \
-      _mm256_storeu_si256((__m256i*)(out+  0), t_##a );                  \
-      _mm256_storeu_si256((__m256i*)(out+ 64), t_##b );                  \
-      _mm256_storeu_si256((__m256i*)(out+128), t_##c );                  \
-      _mm256_storeu_si256((__m256i*)(out+192), t_##d );                  \
-      _mm256_storeu_si256((__m256i*)(out+256), t_##a2);                  \
-      _mm256_storeu_si256((__m256i*)(out+320), t_##b2);                  \
-      _mm256_storeu_si256((__m256i*)(out+384), t_##c2);                  \
-      _mm256_storeu_si256((__m256i*)(out+448), t_##d2);                  \
-    }
-#define ONEOCTO_FIRST(a,b,c,d,a2,b2,c2,d2)                              \
-    {                                                                   \
-      ONEQUAD_UNPCK(a,b,c,d);                                           \
-      ONEQUAD_UNPCK(a2,b2,c2,d2);                                       \
-      t_##a  = _mm256_permute2x128_si256(x_##a, x_##a2, 0x20);          \
-      t_##a2 = _mm256_permute2x128_si256(x_##a, x_##a2, 0x31);          \
-      t_##b  = _mm256_permute2x128_si256(x_##b, x_##b2, 0x20);          \
-      t_##b2 = _mm256_permute2x128_si256(x_##b, x_##b2, 0x31);          \
-      t_##c  = _mm256_permute2x128_si256(x_##c, x_##c2, 0x20);          \
-      t_##c2 = _mm256_permute2x128_si256(x_##c, x_##c2, 0x31);          \
-      t_##d  = _mm256_permute2x128_si256(x_##d, x_##d2, 0x20);          \
-      t_##d2 = _mm256_permute2x128_si256(x_##d, x_##d2, 0x31);          \
-      _mm256_storeu_si256((__m256i*)(out+  0), t_##a );                 \
-      _mm256_storeu_si256((__m256i*)(out+ 64), t_##b );                 \
-      _mm256_storeu_si256((__m256i*)(out+128), t_##c );                 \
-      _mm256_storeu_si256((__m256i*)(out+192), t_##d );                 \
-      _mm256_storeu_si256((__m256i*)(out+256), t_##a2);                 \
-      _mm256_storeu_si256((__m256i*)(out+320), t_##b2);                 \
-    }
-#define ONEOCTO_SECOND(a,b,c,d,a2,b2,c2,d2)                             \
-    {                                                                     \
-      ONEQUAD_UNPCK(a,b,c,d);                                           \
-      ONEQUAD_UNPCK(a2,b2,c2,d2);                                       \
-      t_##a  = _mm256_permute2x128_si256(x_##a, x_##a2, 0x20);          \
-      t_##a2 = _mm256_permute2x128_si256(x_##a, x_##a2, 0x31);          \
-      t_##b  = _mm256_permute2x128_si256(x_##b, x_##b2, 0x20);          \
-      t_##b2 = _mm256_permute2x128_si256(x_##b, x_##b2, 0x31);          \
-      t_##c  = _mm256_permute2x128_si256(x_##c, x_##c2, 0x20);          \
-      t_##c2 = _mm256_permute2x128_si256(x_##c, x_##c2, 0x31);          \
-      t_##d  = _mm256_permute2x128_si256(x_##d, x_##d2, 0x20);          \
-      t_##d2 = _mm256_permute2x128_si256(x_##d, x_##d2, 0x31);          \
-      _mm256_storeu_si256((__m256i*)(out+  0), t_##a );                 \
-      _mm256_storeu_si256((__m256i*)(out+ 64), t_##b );                 \
-      _mm256_storeu_si256((__m256i*)(out+128), t_##c );                 \
-      _mm256_storeu_si256((__m256i*)(out+192), t_##d );                 \
-      _mm256_storeu_si256((__m256i*)(out+256), t_##a2);                 \
-      _mm_storeu_si128((__m128i*)(out+320), _mm256_castsi256_si128(t_##b2)); \
+      VEC16_ROUND( 0, 4, 8,12, 1, 5, 9,13, 2, 6,10,14, 3, 7,11,15);
+      VEC16_ROUND( 0, 5,10,15, 1, 6,11,12, 2, 7, 8,13, 3, 4, 9,14);
     }
 
-    ONEOCTO_FIRST(0,1,2,3,4,5,6,7);
-    out+=32;
-    ONEOCTO_SECOND(8,9,10,11,12,13,14,15);
-    out-=32;
-    
-#undef ONEQUAD
-#undef ONEQUAD_TRANSPOSE
-#undef ONEQUAD_UNPCK
-#undef ONEOCTO
+#define ALLSUMS						\
+    {							\
+	    x_0 = _mm512_add_epi32(x_0, orig0);		\
+	    x_1 = _mm512_add_epi32(x_1, orig1);		\
+	    x_2 = _mm512_add_epi32(x_2, orig2);		\
+	    x_3 = _mm512_add_epi32(x_3, orig3);		\
+	    x_4 = _mm512_add_epi32(x_4, orig4);		\
+	    x_5 = _mm512_add_epi32(x_5, orig5);		\
+	    x_6 = _mm512_add_epi32(x_6, orig6);		\
+	    x_7 = _mm512_add_epi32(x_7, orig7);		\
+	    x_8 = _mm512_add_epi32(x_8, orig8);		\
+	    x_9 = _mm512_add_epi32(x_9, orig9);		\
+	    x_10 = _mm512_add_epi32(x_10, orig10);	\
+	    x_11 = _mm512_add_epi32(x_11, orig11);	\
+	    x_12 = _mm512_add_epi32(x_12, orig12);	\
+	    x_13 = _mm512_add_epi32(x_13, orig13);	\
+	    x_14 = _mm512_add_epi32(x_14, orig14);	\
+	    x_15 = _mm512_add_epi32(x_15, orig15);	\
+    }
 
-#undef VEC8_ROT
-#undef VEC8_QUARTERROUND
-#undef VEC8_QUARTERROUND_NAIVE
-#undef VEC8_QUARTERROUND_SHUFFLE
-#undef VEC8_QUARTERROUND_SHUFFLE2
-#undef VEC8_LINE1
-#undef VEC8_LINE2
-#undef VEC8_LINE3
-#undef VEC8_LINE4
-#undef VEC8_ROUND
-#undef VEC8_ROUND_SEQ
-#undef VEC8_ROUND_HALF
-#undef VEC8_ROUND_HALFANDHALF
+#define ALLTRANS						\
+	{						\
+		__m512i t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15; \
+		t0 = _mm512_unpacklo_epi32(x_0,x_1);			\
+		t1 = _mm512_unpackhi_epi32(x_0,x_1);			\
+		t2 = _mm512_unpacklo_epi32(x_2,x_3);			\
+		t3 = _mm512_unpackhi_epi32(x_2,x_3);			\
+		t4 = _mm512_unpacklo_epi32(x_4,x_5);			\
+		t5 = _mm512_unpackhi_epi32(x_4,x_5);			\
+		t6 = _mm512_unpacklo_epi32(x_6,x_7);			\
+		t7 = _mm512_unpackhi_epi32(x_6,x_7);			\
+		t8 = _mm512_unpacklo_epi32(x_8,x_9);			\
+		t9 = _mm512_unpackhi_epi32(x_8,x_9);			\
+		t10 = _mm512_unpacklo_epi32(x_10,x_11);			\
+		t11 = _mm512_unpackhi_epi32(x_10,x_11);			\
+		t12 = _mm512_unpacklo_epi32(x_12,x_13);			\
+		t13 = _mm512_unpackhi_epi32(x_12,x_13);			\
+		t14 = _mm512_unpacklo_epi32(x_14,x_15);			\
+		t15 = _mm512_unpackhi_epi32(x_14,x_15);			\
+									\
+		x_0 = _mm512_unpacklo_epi64(t0,t2);			\
+		x_1 = _mm512_unpackhi_epi64(t0,t2);			\
+		x_2 = _mm512_unpacklo_epi64(t1,t3);			\
+		x_3 = _mm512_unpackhi_epi64(t1,t3);			\
+		x_4 = _mm512_unpacklo_epi64(t4,t6);			\
+		x_5 = _mm512_unpackhi_epi64(t4,t6);			\
+		x_6 = _mm512_unpacklo_epi64(t5,t7);			\
+		x_7 = _mm512_unpackhi_epi64(t5,t7);			\
+		x_8 = _mm512_unpacklo_epi64(t8,t10);			\
+		x_9 = _mm512_unpackhi_epi64(t8,t10);			\
+		x_10 = _mm512_unpacklo_epi64(t9,t11);			\
+		x_11 = _mm512_unpackhi_epi64(t9,t11);			\
+		x_12 = _mm512_unpacklo_epi64(t12,t14);			\
+		x_13 = _mm512_unpackhi_epi64(t12,t14);			\
+		x_14 = _mm512_unpacklo_epi64(t13,t15);			\
+		x_15 = _mm512_unpackhi_epi64(t13,t15);			\
+									\
+		t0 = _mm512_shuffle_i32x4(x_0, x_4, 0x88);		\
+		t1 = _mm512_shuffle_i32x4(x_1, x_5, 0x88);		\
+		t2 = _mm512_shuffle_i32x4(x_2, x_6, 0x88);		\
+		t3 = _mm512_shuffle_i32x4(x_3, x_7, 0x88);		\
+		t4 = _mm512_shuffle_i32x4(x_0, x_4, 0xdd);		\
+		t5 = _mm512_shuffle_i32x4(x_1, x_5, 0xdd);		\
+		/* t6 = _mm512_shuffle_i32x4(x_2, x_6, 0xdd); */	\
+		/* t7 = _mm512_shuffle_i32x4(x_3, x_7, 0xdd); */	\
+		t8 = _mm512_shuffle_i32x4(x_8, x_12, 0x88);		\
+		t9 = _mm512_shuffle_i32x4(x_9, x_13, 0x88);		\
+		t10 = _mm512_shuffle_i32x4(x_10, x_14, 0x88);		\
+		t11 = _mm512_shuffle_i32x4(x_11, x_15, 0x88);		\
+		t12 = _mm512_shuffle_i32x4(x_8, x_12, 0xdd);		\
+		t13 = _mm512_shuffle_i32x4(x_9, x_13, 0xdd);		\
+		t14 = _mm512_shuffle_i32x4(x_10, x_14, 0xdd);		\
+		t15 = _mm512_shuffle_i32x4(x_11, x_15, 0xdd);		\
+									\
+		x_0 = _mm512_shuffle_i32x4(t0, t8, 0x88);		\
+		x_1 = _mm512_shuffle_i32x4(t1, t9, 0x88);		\
+		x_2 = _mm512_shuffle_i32x4(t2, t10, 0x88);		\
+		x_3 = _mm512_shuffle_i32x4(t3, t11, 0x88);		\
+		x_4 = _mm512_shuffle_i32x4(t4, t12, 0x88);		\
+		x_5 = _mm512_shuffle_i32x4(t5, t13, 0x88);		\
+	}
+
+#define ALLSTORE							\
+    {									\
+		_mm512_storeu_si512((long long*)(out+64*0), x_0);	\
+		_mm512_storeu_si512((long long*)(out+64*1), x_1);	\
+		_mm512_storeu_si512((long long*)(out+64*2), x_2);	\
+		_mm512_storeu_si512((long long*)(out+64*3), x_3);	\
+		_mm512_storeu_si512((long long*)(out+64*4), x_4);	\
+		_mm512_mask_storeu_epi64((long long*)(out+64*5), 0x3F, x_5); \
+    }
+
+#define DOALL				\
+    {					\
+	  ALLSUMS			\
+	  ALLTRANS			\
+	  ALLSTORE			\
+    }
+
+    /* the transpose seems faster on both KNL & SKX */
+    DOALL
+
+#undef ALLSUMS
+#undef ALLTRANS
+#undef ALLXOR
+#undef ALLSTORE
+#undef ALLXORSTORE
+#undef DOALL
+
+#undef VEC16_ROT
+#undef VEC16_LINE1
+#undef VEC16_LINE2
+#undef VEC16_LINE3
+#undef VEC16_LINE4
+#undef VEC16_4L1
+#undef VEC16_4L2
+#undef VEC16_4L3
+#undef VEC16_4L4
+#undef VEC16_ROUND
+#undef VEC16_ROUND_SEQ
+#undef VEC16_ROUND_INTER
 

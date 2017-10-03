@@ -2,15 +2,7 @@
 #include "randombytes.h"
 #include "cpucycles.h"
 #include "crypto_box.h"
-
-extern void printentry(long long,const char *,long long *,long long);
-extern unsigned char *alignedcalloc(unsigned long long);
-extern const char *primitiveimplementation;
-extern const char *implementationversion;
-extern const char *sizenames[];
-extern const long long sizes[];
-extern void allocate(void);
-extern void measure(void);
+#include "measure.h"
 
 const char *primitiveimplementation = crypto_box_IMPLEMENTATION;
 const char *implementationversion = crypto_box_VERSION;
@@ -48,6 +40,8 @@ void allocate(void)
 
 #define TIMINGS 15
 static long long cycles[TIMINGS + 1];
+static long long rbytes[TIMINGS + 1];
+static long long rcalls[TIMINGS + 1];
 
 void measure(void)
 {
@@ -58,31 +52,55 @@ void measure(void)
   for (loop = 0;loop < LOOPS;++loop) {
     for (i = 0;i <= TIMINGS;++i) {
       cycles[i] = cpucycles();
+      rbytes[i] = randombytes_bytes;
+      rcalls[i] = randombytes_calls;
       crypto_box_keypair(pka,ska);
     }
     for (i = 0;i < TIMINGS;++i) cycles[i] = cycles[i + 1] - cycles[i];
+    for (i = 0;i < TIMINGS;++i) rbytes[i] = rbytes[i + 1] - rbytes[i];
+    for (i = 0;i < TIMINGS;++i) rcalls[i] = rcalls[i + 1] - rcalls[i];
     printentry(-1,"keypair_cycles",cycles,TIMINGS);
+    printentry(-1,"keypair_randombytes",rbytes,TIMINGS);
+    printentry(-1,"keypair_randomcalls",rcalls,TIMINGS);
 
     for (i = 0;i <= TIMINGS;++i) {
       cycles[i] = cpucycles();
+      rbytes[i] = randombytes_bytes;
+      rcalls[i] = randombytes_calls;
       crypto_box_keypair(pkb,skb);
     }
     for (i = 0;i < TIMINGS;++i) cycles[i] = cycles[i + 1] - cycles[i];
+    for (i = 0;i < TIMINGS;++i) rbytes[i] = rbytes[i + 1] - rbytes[i];
+    for (i = 0;i < TIMINGS;++i) rcalls[i] = rcalls[i + 1] - rcalls[i];
     printentry(-1,"keypair_cycles",cycles,TIMINGS);
+    printentry(-1,"keypair_randombytes",rbytes,TIMINGS);
+    printentry(-1,"keypair_randomcalls",rcalls,TIMINGS);
 
     for (i = 0;i <= TIMINGS;++i) {
       cycles[i] = cpucycles();
+      rbytes[i] = randombytes_bytes;
+      rcalls[i] = randombytes_calls;
       crypto_box_beforenm(sa,pkb,ska);
     }
     for (i = 0;i < TIMINGS;++i) cycles[i] = cycles[i + 1] - cycles[i];
+    for (i = 0;i < TIMINGS;++i) rbytes[i] = rbytes[i + 1] - rbytes[i];
+    for (i = 0;i < TIMINGS;++i) rcalls[i] = rcalls[i + 1] - rcalls[i];
     printentry(-1,"beforenm_cycles",cycles,TIMINGS);
+    printentry(-1,"beforenm_randombytes",rbytes,TIMINGS);
+    printentry(-1,"beforenm_randomcalls",rcalls,TIMINGS);
 
     for (i = 0;i <= TIMINGS;++i) {
       cycles[i] = cpucycles();
+      rbytes[i] = randombytes_bytes;
+      rcalls[i] = randombytes_calls;
       crypto_box_beforenm(sb,pka,skb);
     }
     for (i = 0;i < TIMINGS;++i) cycles[i] = cycles[i + 1] - cycles[i];
+    for (i = 0;i < TIMINGS;++i) rbytes[i] = rbytes[i + 1] - rbytes[i];
+    for (i = 0;i < TIMINGS;++i) rcalls[i] = rcalls[i + 1] - rcalls[i];
     printentry(-1,"beforenm_cycles",cycles,TIMINGS);
+    printentry(-1,"beforenm_randombytes",rbytes,TIMINGS);
+    printentry(-1,"beforenm_randomcalls",rcalls,TIMINGS);
 
     for (mlen = 0;mlen <= MAXTEST_BYTES;mlen += 1 + mlen / 8) {
       randombytes(n,crypto_box_NONCEBYTES);
@@ -91,47 +109,83 @@ void measure(void)
 
       for (i = 0;i <= TIMINGS;++i) {
         cycles[i] = cpucycles();
+        rbytes[i] = randombytes_bytes;
+        rcalls[i] = randombytes_calls;
 	crypto_box(c,m,mlen + crypto_box_ZEROBYTES,n,pka,skb);
       }
       for (i = 0;i < TIMINGS;++i) cycles[i] = cycles[i + 1] - cycles[i];
+      for (i = 0;i < TIMINGS;++i) rbytes[i] = rbytes[i + 1] - rbytes[i];
+      for (i = 0;i < TIMINGS;++i) rcalls[i] = rcalls[i + 1] - rcalls[i];
       printentry(mlen,"cycles",cycles,TIMINGS);
+      printentry(mlen,"randombytes",rbytes,TIMINGS);
+      printentry(mlen,"randomcalls",rcalls,TIMINGS);
 
       for (i = 0;i <= TIMINGS;++i) {
         cycles[i] = cpucycles();
+        rbytes[i] = randombytes_bytes;
+        rcalls[i] = randombytes_calls;
 	crypto_box_open(m,c,mlen + crypto_box_ZEROBYTES,n,pkb,ska);
       }
       for (i = 0;i < TIMINGS;++i) cycles[i] = cycles[i + 1] - cycles[i];
+      for (i = 0;i < TIMINGS;++i) rbytes[i] = rbytes[i + 1] - rbytes[i];
+      for (i = 0;i < TIMINGS;++i) rcalls[i] = rcalls[i + 1] - rcalls[i];
       printentry(mlen,"open_cycles",cycles,TIMINGS);
+      printentry(mlen,"open_randombytes",rbytes,TIMINGS);
+      printentry(mlen,"open_randomcalls",rcalls,TIMINGS);
 
       ++c[crypto_box_ZEROBYTES];
       for (i = 0;i <= TIMINGS;++i) {
         cycles[i] = cpucycles();
+        rbytes[i] = randombytes_bytes;
+        rcalls[i] = randombytes_calls;
 	crypto_box_open(m,c,mlen + crypto_box_ZEROBYTES,n,pkb,ska);
       }
       for (i = 0;i < TIMINGS;++i) cycles[i] = cycles[i + 1] - cycles[i];
+      for (i = 0;i < TIMINGS;++i) rbytes[i] = rbytes[i + 1] - rbytes[i];
+      for (i = 0;i < TIMINGS;++i) rcalls[i] = rcalls[i + 1] - rcalls[i];
       printentry(mlen,"forgery_open_cycles",cycles,TIMINGS);
+      printentry(mlen,"forgery_open_randombytes",rbytes,TIMINGS);
+      printentry(mlen,"forgery_open_randomcalls",rcalls,TIMINGS);
 
       for (i = 0;i <= TIMINGS;++i) {
         cycles[i] = cpucycles();
+        rbytes[i] = randombytes_bytes;
+        rcalls[i] = randombytes_calls;
 	crypto_box_afternm(c,m,mlen + crypto_box_ZEROBYTES,n,sb);
       }
       for (i = 0;i < TIMINGS;++i) cycles[i] = cycles[i + 1] - cycles[i];
+      for (i = 0;i < TIMINGS;++i) rbytes[i] = rbytes[i + 1] - rbytes[i];
+      for (i = 0;i < TIMINGS;++i) rcalls[i] = rcalls[i + 1] - rcalls[i];
       printentry(mlen,"afternm_cycles",cycles,TIMINGS);
+      printentry(mlen,"afternm_randombytes",rbytes,TIMINGS);
+      printentry(mlen,"afternm_randomcalls",rcalls,TIMINGS);
 
       for (i = 0;i <= TIMINGS;++i) {
         cycles[i] = cpucycles();
+        rbytes[i] = randombytes_bytes;
+        rcalls[i] = randombytes_calls;
 	crypto_box_open_afternm(m,c,mlen + crypto_box_ZEROBYTES,n,sa);
       }
       for (i = 0;i < TIMINGS;++i) cycles[i] = cycles[i + 1] - cycles[i];
+      for (i = 0;i < TIMINGS;++i) rbytes[i] = rbytes[i + 1] - rbytes[i];
+      for (i = 0;i < TIMINGS;++i) rcalls[i] = rcalls[i + 1] - rcalls[i];
       printentry(mlen,"open_afternm_cycles",cycles,TIMINGS);
+      printentry(mlen,"open_afternm_randombytes",rbytes,TIMINGS);
+      printentry(mlen,"open_afternm_randomcalls",rcalls,TIMINGS);
 
       ++c[crypto_box_ZEROBYTES];
       for (i = 0;i <= TIMINGS;++i) {
         cycles[i] = cpucycles();
+        rbytes[i] = randombytes_bytes;
+        rcalls[i] = randombytes_calls;
 	crypto_box_open_afternm(m,c,mlen + crypto_box_ZEROBYTES,n,sa);
       }
       for (i = 0;i < TIMINGS;++i) cycles[i] = cycles[i + 1] - cycles[i];
+      for (i = 0;i < TIMINGS;++i) rbytes[i] = rbytes[i + 1] - rbytes[i];
+      for (i = 0;i < TIMINGS;++i) rcalls[i] = rcalls[i + 1] - rcalls[i];
       printentry(mlen,"forgery_open_afternm_cycles",cycles,TIMINGS);
+      printentry(mlen,"forgery_open_afternm_randombytes",rbytes,TIMINGS);
+      printentry(mlen,"forgery_open_afternm_randomcalls",rcalls,TIMINGS);
     }
   }
 }

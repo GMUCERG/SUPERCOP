@@ -1,11 +1,11 @@
 /*
- * crypto_verify/try.c version 20140502
+ * crypto_verify/try.c version 20170716
  * D. J. Bernstein
  * Public domain.
  */
 
 #include "crypto_verify.h"
-#include "randombytes.h"
+#include "kernelrandombytes.h"
 #include "try.h"
 
 #ifdef SMALL
@@ -55,8 +55,8 @@ void test(void)
   long long tests;
 
   for (tests = 0;tests < LOOPS;++tests) {
-    randombytes(x,crypto_verify_BYTES);
-    randombytes(y,crypto_verify_BYTES);
+    kernelrandombytes(x,crypto_verify_BYTES);
+    kernelrandombytes(y,crypto_verify_BYTES);
     check();
     memcpy(y,x,crypto_verify_BYTES);
     check();

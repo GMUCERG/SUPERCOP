@@ -24,11 +24,24 @@
 * 4. The users shall comply with all applicable laws and regulations, including 
 *export and import control laws, which govern the usage of the Software.
 */
-#define ALIGN(n) __attribute__ ((aligned(n)))
+#ifdef _MSC_VER
+#include <intrin.h>
+#else
+#include <x86intrin.h>
+#endif
 
-typedef ALIGN(16)__m128i block;
+#if __GNUC__
+#define ALIGN(n) __attribute__ ((aligned(n)))
+#elif _MSC_VER
+#define ALIGN(n) __declspec(align(n))
+#define __inline__ __inline
+#else 
+#define ALIGN(n)
+#endif
+
 typedef unsigned char uint8;
 typedef unsigned int	uint32;
+typedef ALIGN(16)__m128i block;
 
 #define BLOCK 16
 #define DBLOCK 32
@@ -41,5 +54,7 @@ typedef unsigned int	uint32;
 #define Para 1
 #define Seri 0
 #define ADP (Para)
+
+#define DOUBLING_TABLE //use doubling.h
 
 #define SUCCESS	0

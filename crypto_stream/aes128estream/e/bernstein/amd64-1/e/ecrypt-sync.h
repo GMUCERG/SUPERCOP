@@ -1,5 +1,5 @@
-#define ECRYPT_VARIANT 1
-#define ECRYPT_API
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_VARIANT 1
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_API
 /* ecrypt-sync.h */
 
 /* 
@@ -9,8 +9,8 @@
  * *** Please only edit parts marked with "[edit]". ***
  */
 
-#ifndef ECRYPT_SYNC
-#define ECRYPT_SYNC
+#ifndef crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_SYNC
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_SYNC
 
 #include "ecrypt-portable.h"
 
@@ -21,17 +21,17 @@
 /* 
  * The name of your cipher.
  */
-#define ECRYPT_NAME "AES-CTR"                 /* [edit] */ 
-#define ECRYPT_PROFILE "bench"
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_NAME "AES-CTR"                 /* [edit] */ 
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_PROFILE "bench"
 
 /*
  * Specify which key and IV sizes are supported by your cipher. A user
  * should be able to enumerate the supported sizes by running the
  * following code:
  *
- * for (i = 0; ECRYPT_KEYSIZE(i) <= ECRYPT_MAXKEYSIZE; ++i)
+ * for (i = 0; crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_KEYSIZE(i) <= crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_MAXKEYSIZE; ++i)
  *   {
- *     keysize = ECRYPT_KEYSIZE(i);
+ *     keysize = crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_KEYSIZE(i);
  *
  *     ...
  *   }
@@ -39,25 +39,25 @@
  * All sizes are in bits.
  */
 
-#define ECRYPT_MAXKEYSIZE 128                  /* [edit] */
-#define ECRYPT_KEYSIZE(i) (128 + (i)*64)       /* [edit] */
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_MAXKEYSIZE 128                  /* [edit] */
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_KEYSIZE(i) (128 + (i)*64)       /* [edit] */
 
-#define ECRYPT_MAXIVSIZE 128                   /* [edit] */
-#define ECRYPT_IVSIZE(i) (128 + (i)*32)        /* [edit] */
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_MAXIVSIZE 128                   /* [edit] */
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_IVSIZE(i) (128 + (i)*32)        /* [edit] */
 
 /* ------------------------------------------------------------------------- */
 
 /* Data structures */
 
 /* 
- * ECRYPT_ctx is the structure containing the representation of the
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ctx is the structure containing the representation of the
  * internal state of your cipher. 
  */
 
 typedef struct {
   u32 key[14];
   u32 ctr[4];
-} ECRYPT_ctx;
+} crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ctx;
 
 /* ------------------------------------------------------------------------- */
 
@@ -68,100 +68,100 @@ typedef struct {
  * called once when the program starts (e.g., to build expanded S-box
  * tables).
  */
-void ECRYPT_init(void);
+void crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_init(void);
 
 /*
  * Key setup. It is the user's responsibility to select the values of
  * keysize and ivsize from the set of supported values specified
  * above.
  */
-void ECRYPT_keysetup(
-  ECRYPT_ctx* ctx, 
+void crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_keysetup(
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ctx* ctx, 
   const u8* key, 
   u32 keysize,                /* Key size in bits. */ 
   u32 ivsize);                /* IV size in bits. */ 
 
 /*
- * IV setup. After having called ECRYPT_keysetup(), the user is
- * allowed to call ECRYPT_ivsetup() different times in order to
+ * IV setup. After having called crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_keysetup(), the user is
+ * allowed to call crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ivsetup() different times in order to
  * encrypt/decrypt different messages with the same key but different
  * IV's.
  */
-void ECRYPT_ivsetup(
-  ECRYPT_ctx* ctx, 
+void crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ivsetup(
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ctx* ctx, 
   const u8* iv);
 
 /*
  * Encryption/decryption of arbitrary length messages.
  *
  * For efficiency reasons, the API provides two types of
- * encrypt/decrypt functions. The ECRYPT_encrypt_bytes() function
+ * encrypt/decrypt functions. The crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_bytes() function
  * (declared here) encrypts byte strings of arbitrary length, while
- * the ECRYPT_encrypt_blocks() function (defined later) only accepts
- * lengths which are multiples of ECRYPT_BLOCKLENGTH.
+ * the crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_blocks() function (defined later) only accepts
+ * lengths which are multiples of crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_BLOCKLENGTH.
  * 
  * The user is allowed to make multiple calls to
- * ECRYPT_encrypt_blocks() to incrementally encrypt a long message,
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_blocks() to incrementally encrypt a long message,
  * but he is NOT allowed to make additional encryption calls once he
- * has called ECRYPT_encrypt_bytes() (unless he starts a new message
+ * has called crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_bytes() (unless he starts a new message
  * of course). For example, this sequence of calls is acceptable:
  *
- * ECRYPT_keysetup();
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_keysetup();
  *
- * ECRYPT_ivsetup();
- * ECRYPT_encrypt_blocks();
- * ECRYPT_encrypt_blocks();
- * ECRYPT_encrypt_bytes();
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ivsetup();
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_blocks();
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_blocks();
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_bytes();
  *
- * ECRYPT_ivsetup();
- * ECRYPT_encrypt_blocks();
- * ECRYPT_encrypt_blocks();
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ivsetup();
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_blocks();
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_blocks();
  *
- * ECRYPT_ivsetup();
- * ECRYPT_encrypt_bytes();
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ivsetup();
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_bytes();
  * 
  * The following sequence is not:
  *
- * ECRYPT_keysetup();
- * ECRYPT_ivsetup();
- * ECRYPT_encrypt_blocks();
- * ECRYPT_encrypt_bytes();
- * ECRYPT_encrypt_blocks();
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_keysetup();
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ivsetup();
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_blocks();
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_bytes();
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_blocks();
  */
 
 /*
- * By default ECRYPT_encrypt_bytes() and ECRYPT_decrypt_bytes() are
+ * By default crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_bytes() and crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_decrypt_bytes() are
  * defined as macros which redirect the call to a single function
- * ECRYPT_process_bytes(). If you want to provide separate encryption
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_process_bytes(). If you want to provide separate encryption
  * and decryption functions, please undef
- * ECRYPT_HAS_SINGLE_BYTE_FUNCTION.
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_HAS_SINGLE_BYTE_FUNCTION.
  */
-#define ECRYPT_HAS_SINGLE_BYTE_FUNCTION       /* [edit] */
-#ifdef ECRYPT_HAS_SINGLE_BYTE_FUNCTION
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_HAS_SINGLE_BYTE_FUNCTION       /* [edit] */
+#ifdef crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_HAS_SINGLE_BYTE_FUNCTION
 
-#define ECRYPT_encrypt_bytes(ctx, plaintext, ciphertext, msglen)   \
-  ECRYPT_process_bytes(0, ctx, plaintext, ciphertext, msglen)
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_bytes(ctx, plaintext, ciphertext, msglen)   \
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_process_bytes(0, ctx, plaintext, ciphertext, msglen)
 
-#define ECRYPT_decrypt_bytes(ctx, ciphertext, plaintext, msglen)   \
-  ECRYPT_process_bytes(1, ctx, ciphertext, plaintext, msglen)
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_decrypt_bytes(ctx, ciphertext, plaintext, msglen)   \
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_process_bytes(1, ctx, ciphertext, plaintext, msglen)
 
-void ECRYPT_process_bytes(
+void crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_process_bytes(
   int action,                 /* 0 = encrypt; 1 = decrypt; */
-  ECRYPT_ctx* ctx, 
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ctx* ctx, 
   const u8* input, 
   u8* output, 
   u32 msglen);                /* Message length in bytes. */ 
 
 #else
 
-void ECRYPT_encrypt_bytes(
-  ECRYPT_ctx* ctx, 
+void crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_bytes(
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ctx* ctx, 
   const u8* plaintext, 
   u8* ciphertext, 
   u32 msglen);                /* Message length in bytes. */ 
 
-void ECRYPT_decrypt_bytes(
-  ECRYPT_ctx* ctx, 
+void crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_decrypt_bytes(
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ctx* ctx, 
   const u8* ciphertext, 
   u8* plaintext, 
   u32 msglen);                /* Message length in bytes. */ 
@@ -177,14 +177,14 @@ void ECRYPT_decrypt_bytes(
  * which immediately generates keystream without having to provide it
  * with a zero plaintext. If your cipher cannot provide this function
  * (e.g., because it is not strictly a synchronous cipher), please
- * reset the ECRYPT_GENERATES_KEYSTREAM flag.
+ * reset the crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_GENERATES_KEYSTREAM flag.
  */
 
-#undef ECRYPT_GENERATES_KEYSTREAM
-#ifdef ECRYPT_GENERATES_KEYSTREAM
+#undef crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_GENERATES_KEYSTREAM
+#ifdef crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_GENERATES_KEYSTREAM
 
-void ECRYPT_keystream_bytes(
-  ECRYPT_ctx* ctx,
+void crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_keystream_bytes(
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ctx* ctx,
   u8* keystream,
   u32 length);                /* Length of keystream in bytes. */
 
@@ -205,30 +205,30 @@ void ECRYPT_keystream_bytes(
  *
  * The default definitions of these functions can be found in
  * "ecrypt-sync.c". If you want to implement them differently, please
- * undef the ECRYPT_USES_DEFAULT_ALL_IN_ONE flag.
+ * undef the crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_USES_DEFAULT_ALL_IN_ONE flag.
  */
-#define ECRYPT_USES_DEFAULT_ALL_IN_ONE        /* [edit] */
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_USES_DEFAULT_ALL_IN_ONE        /* [edit] */
 
 /*
- * Undef ECRYPT_HAS_SINGLE_PACKET_FUNCTION if you want to provide
+ * Undef crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_HAS_SINGLE_PACKET_FUNCTION if you want to provide
  * separate packet encryption and decryption functions.
  */
-#define ECRYPT_HAS_SINGLE_PACKET_FUNCTION     /* [edit] */
-#ifdef ECRYPT_HAS_SINGLE_PACKET_FUNCTION
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_HAS_SINGLE_PACKET_FUNCTION     /* [edit] */
+#ifdef crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_HAS_SINGLE_PACKET_FUNCTION
 
-#define ECRYPT_encrypt_packet(                                        \
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_packet(                                        \
     ctx, iv, plaintext, ciphertext, mglen)                            \
-  ECRYPT_process_packet(0,                                            \
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_process_packet(0,                                            \
     ctx, iv, plaintext, ciphertext, mglen)
 
-#define ECRYPT_decrypt_packet(                                        \
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_decrypt_packet(                                        \
     ctx, iv, ciphertext, plaintext, mglen)                            \
-  ECRYPT_process_packet(1,                                            \
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_process_packet(1,                                            \
     ctx, iv, ciphertext, plaintext, mglen)
 
-void ECRYPT_process_packet(
+void crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_process_packet(
   int action,                 /* 0 = encrypt; 1 = decrypt; */
-  ECRYPT_ctx* ctx, 
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ctx* ctx, 
   const u8* iv,
   const u8* input, 
   u8* output, 
@@ -236,15 +236,15 @@ void ECRYPT_process_packet(
 
 #else
 
-void ECRYPT_encrypt_packet(
-  ECRYPT_ctx* ctx, 
+void crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_packet(
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ctx* ctx, 
   const u8* iv,
   const u8* plaintext, 
   u8* ciphertext, 
   u32 msglen);
 
-void ECRYPT_decrypt_packet(
-  ECRYPT_ctx* ctx, 
+void crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_decrypt_packet(
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ctx* ctx, 
   const u8* iv,
   const u8* ciphertext, 
   u8* plaintext, 
@@ -257,73 +257,73 @@ void ECRYPT_decrypt_packet(
  * 
  * By default, these functions are defined as macros. If you want to
  * provide a different implementation, please undef the
- * ECRYPT_USES_DEFAULT_BLOCK_MACROS flag and implement the functions
+ * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_USES_DEFAULT_BLOCK_MACROS flag and implement the functions
  * declared below.
  */
 
-#define ECRYPT_BLOCKLENGTH 16                 /* [edit] */
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_BLOCKLENGTH 16                 /* [edit] */
 
-#define ECRYPT_USES_DEFAULT_BLOCK_MACROS      /* [edit] */
-#ifdef ECRYPT_USES_DEFAULT_BLOCK_MACROS
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_USES_DEFAULT_BLOCK_MACROS      /* [edit] */
+#ifdef crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_USES_DEFAULT_BLOCK_MACROS
 
-#define ECRYPT_encrypt_blocks(ctx, plaintext, ciphertext, blocks)  \
-  ECRYPT_encrypt_bytes(ctx, plaintext, ciphertext,                 \
-    (blocks) * ECRYPT_BLOCKLENGTH)
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_blocks(ctx, plaintext, ciphertext, blocks)  \
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_bytes(ctx, plaintext, ciphertext,                 \
+    (blocks) * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_BLOCKLENGTH)
 
-#define ECRYPT_decrypt_blocks(ctx, ciphertext, plaintext, blocks)  \
-  ECRYPT_decrypt_bytes(ctx, ciphertext, plaintext,                 \
-    (blocks) * ECRYPT_BLOCKLENGTH)
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_decrypt_blocks(ctx, ciphertext, plaintext, blocks)  \
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_decrypt_bytes(ctx, ciphertext, plaintext,                 \
+    (blocks) * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_BLOCKLENGTH)
 
-#ifdef ECRYPT_GENERATES_KEYSTREAM
+#ifdef crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_GENERATES_KEYSTREAM
 
-#define ECRYPT_keystream_blocks(ctx, keystream, blocks)            \
-  ECRYPT_keystream_bytes(ctx, keystream,                           \
-    (blocks) * ECRYPT_BLOCKLENGTH)
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_keystream_blocks(ctx, keystream, blocks)            \
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_keystream_bytes(ctx, keystream,                           \
+    (blocks) * crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_BLOCKLENGTH)
 
 #endif
 
 #else
 
 /*
- * Undef ECRYPT_HAS_SINGLE_BLOCK_FUNCTION if you want to provide
+ * Undef crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_HAS_SINGLE_BLOCK_FUNCTION if you want to provide
  * separate block encryption and decryption functions.
  */
-#define ECRYPT_HAS_SINGLE_BLOCK_FUNCTION      /* [edit] */
-#ifdef ECRYPT_HAS_SINGLE_BLOCK_FUNCTION
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_HAS_SINGLE_BLOCK_FUNCTION      /* [edit] */
+#ifdef crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_HAS_SINGLE_BLOCK_FUNCTION
 
-#define ECRYPT_encrypt_blocks(ctx, plaintext, ciphertext, blocks)     \
-  ECRYPT_process_blocks(0, ctx, plaintext, ciphertext, blocks)
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_blocks(ctx, plaintext, ciphertext, blocks)     \
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_process_blocks(0, ctx, plaintext, ciphertext, blocks)
 
-#define ECRYPT_decrypt_blocks(ctx, ciphertext, plaintext, blocks)     \
-  ECRYPT_process_blocks(1, ctx, ciphertext, plaintext, blocks)
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_decrypt_blocks(ctx, ciphertext, plaintext, blocks)     \
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_process_blocks(1, ctx, ciphertext, plaintext, blocks)
 
-void ECRYPT_process_blocks(
+void crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_process_blocks(
   int action,                 /* 0 = encrypt; 1 = decrypt; */
-  ECRYPT_ctx* ctx, 
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ctx* ctx, 
   const u8* input, 
   u8* output, 
   u32 blocks);                /* Message length in blocks. */
 
 #else
 
-void ECRYPT_encrypt_blocks(
-  ECRYPT_ctx* ctx, 
+void crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_encrypt_blocks(
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ctx* ctx, 
   const u8* plaintext, 
   u8* ciphertext, 
   u32 blocks);                /* Message length in blocks. */ 
 
-void ECRYPT_decrypt_blocks(
-  ECRYPT_ctx* ctx, 
+void crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_decrypt_blocks(
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ctx* ctx, 
   const u8* ciphertext, 
   u8* plaintext, 
   u32 blocks);                /* Message length in blocks. */ 
 
 #endif
 
-#ifdef ECRYPT_GENERATES_KEYSTREAM
+#ifdef crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_GENERATES_KEYSTREAM
 
-void ECRYPT_keystream_blocks(
-  ECRYPT_ctx* ctx,
+void crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_keystream_blocks(
+  crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_ctx* ctx,
   u8* keystream,
   u32 blocks);                /* Keystream length in blocks. */ 
 
@@ -333,21 +333,21 @@ void ECRYPT_keystream_blocks(
 
 /*
  * If your cipher can be implemented in different ways, you can use
- * the ECRYPT_VARIANT parameter to allow the user to choose between
- * them at compile time (e.g., gcc -DECRYPT_VARIANT=3 ...). Please
+ * the crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_VARIANT parameter to allow the user to choose between
+ * them at compile time (e.g., gcc -Dcrypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_VARIANT=3 ...). Please
  * only use this possibility if you really think it could make a
  * significant difference and keep the number of variants
- * (ECRYPT_MAXVARIANT) as small as possible (definitely not more than
+ * (crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_MAXVARIANT) as small as possible (definitely not more than
  * 10). Note also that all variants should have exactly the same
- * external interface (i.e., the same ECRYPT_BLOCKLENGTH, etc.). 
+ * external interface (i.e., the same crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_BLOCKLENGTH, etc.). 
  */
-#define ECRYPT_MAXVARIANT 1                   /* [edit] */
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_MAXVARIANT 1                   /* [edit] */
 
-#ifndef ECRYPT_VARIANT
-#define ECRYPT_VARIANT 1
+#ifndef crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_VARIANT
+#define crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_VARIANT 1
 #endif
 
-#if (ECRYPT_VARIANT > ECRYPT_MAXVARIANT)
+#if (crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_VARIANT > crypto_stream_aes128estream_e_bernstein_amd64_1_ECRYPT_MAXVARIANT)
 #error this variant does not exist
 #endif
 

@@ -2,18 +2,18 @@
 	.section	".text"
 	.align 2
 	.p2align 4,,15
-	.globl ECRYPT_init
-	.type	ECRYPT_init, @function
-ECRYPT_init:
+	.globl crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_init
+	.type	crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_init, @function
+crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_init:
 	stwu 1,-16(1)
 	addi 1,1,16
 	blr
-	.size	ECRYPT_init,.-ECRYPT_init
+	.size	crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_init,.-crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_init
 	.align 2
 	.p2align 4,,15
-	.globl ECRYPT_keysetup
-	.type	ECRYPT_keysetup, @function
-ECRYPT_keysetup:
+	.globl crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_keysetup
+	.type	crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_keysetup, @function
+crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_keysetup:
 	stwu 1,-48(1)
 	lis 9,aes_big_constants@ha
 	li 0,10
@@ -77,12 +77,12 @@ ECRYPT_keysetup:
 	lwz 31,44(1)
 	addi 1,1,48
 	blr
-	.size	ECRYPT_keysetup,.-ECRYPT_keysetup
+	.size	crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_keysetup,.-crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_keysetup
 	.align 2
 	.p2align 4,,15
-	.globl ECRYPT_ivsetup
-	.type	ECRYPT_ivsetup, @function
-ECRYPT_ivsetup:
+	.globl crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_ivsetup
+	.type	crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_ivsetup, @function
+crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_ivsetup:
 	lwz 0,0(4)
 	stwu 1,-16(1)
 	stw 0,56(3)
@@ -97,7 +97,7 @@ ECRYPT_ivsetup:
 	lwz 9,12(4)
 	stw 9,68(3)
 	blr
-	.size	ECRYPT_ivsetup,.-ECRYPT_ivsetup
+	.size	crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_ivsetup,.-crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_ivsetup
 	.globl aes_big_constants
 	.section	.rodata
 	.align 2

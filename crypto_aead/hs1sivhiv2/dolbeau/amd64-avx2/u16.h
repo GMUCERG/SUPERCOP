@@ -16,6 +16,67 @@ Public domain.
 #define VEC16_LINE4(a,b,c,d)                                             \
   x_##c = _mm512_add_epi32(x_##c, x_##d); x_##b = VEC16_ROT(_mm512_xor_si512(x_##b, x_##c),  7)
 
+#define VEC16_4L1(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4) \
+	{ __m512i t0, t1, t2, t3;				   \
+		x_##a1 = _mm512_add_epi32(x_##a1, x_##b1);	   \
+		x_##a2 = _mm512_add_epi32(x_##a2, x_##b2);	   \
+		x_##a3 = _mm512_add_epi32(x_##a3, x_##b3);	   \
+		x_##a4 = _mm512_add_epi32(x_##a4, x_##b4);	   \
+		t0 = _mm512_xor_si512(x_##d1, x_##a1);		   \
+		t1 = _mm512_xor_si512(x_##d2, x_##a2);		   \
+		t2 = _mm512_xor_si512(x_##d3, x_##a3);		   \
+		t3 = _mm512_xor_si512(x_##d4, x_##a4);		   \
+		x_##d1 = VEC16_ROT(t0, 16);			   \
+		x_##d2 = VEC16_ROT(t1, 16);			   \
+		x_##d3 = VEC16_ROT(t2, 16);			   \
+		x_##d4 = VEC16_ROT(t3, 16);			   \
+	}
+#define VEC16_4L2(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4) \
+	{ __m512i t0, t1, t2, t3;				   \
+		x_##c1 = _mm512_add_epi32(x_##c1, x_##d1);	   \
+		x_##c2 = _mm512_add_epi32(x_##c2, x_##d2);	   \
+		x_##c3 = _mm512_add_epi32(x_##c3, x_##d3);	   \
+		x_##c4 = _mm512_add_epi32(x_##c4, x_##d4);	   \
+		t0 = _mm512_xor_si512(x_##b1, x_##c1);		   \
+		t1 = _mm512_xor_si512(x_##b2, x_##c2);		   \
+		t2 = _mm512_xor_si512(x_##b3, x_##c3);		   \
+		t3 = _mm512_xor_si512(x_##b4, x_##c4);		   \
+		x_##b1 = VEC16_ROT(t0, 12);			   \
+		x_##b2 = VEC16_ROT(t1, 12);			   \
+		x_##b3 = VEC16_ROT(t2, 12);			   \
+		x_##b4 = VEC16_ROT(t3, 12);			   \
+	}
+#define VEC16_4L3(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4) \
+	{ __m512i t0, t1, t2, t3;				   \
+		x_##a1 = _mm512_add_epi32(x_##a1, x_##b1);	   \
+		x_##a2 = _mm512_add_epi32(x_##a2, x_##b2);	   \
+		x_##a3 = _mm512_add_epi32(x_##a3, x_##b3);	   \
+		x_##a4 = _mm512_add_epi32(x_##a4, x_##b4);	   \
+		t0 = _mm512_xor_si512(x_##d1, x_##a1);		   \
+		t1 = _mm512_xor_si512(x_##d2, x_##a2);		   \
+		t2 = _mm512_xor_si512(x_##d3, x_##a3);		   \
+		t3 = _mm512_xor_si512(x_##d4, x_##a4);		   \
+		x_##d1 = VEC16_ROT(t0, 8);			   \
+		x_##d2 = VEC16_ROT(t1, 8);			   \
+		x_##d3 = VEC16_ROT(t2, 8);			   \
+		x_##d4 = VEC16_ROT(t3, 8);			   \
+	}
+#define VEC16_4L4(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4) \
+	{ __m512i t0, t1, t2, t3;				   \
+		x_##c1 = _mm512_add_epi32(x_##c1, x_##d1);	   \
+		x_##c2 = _mm512_add_epi32(x_##c2, x_##d2);	   \
+		x_##c3 = _mm512_add_epi32(x_##c3, x_##d3);	   \
+		x_##c4 = _mm512_add_epi32(x_##c4, x_##d4);	   \
+		t0 = _mm512_xor_si512(x_##b1, x_##c1);		   \
+		t1 = _mm512_xor_si512(x_##b2, x_##c2);		   \
+		t2 = _mm512_xor_si512(x_##b3, x_##c3);		   \
+		t3 = _mm512_xor_si512(x_##b4, x_##c4);		   \
+		x_##b1 = VEC16_ROT(t0, 7);			   \
+		x_##b2 = VEC16_ROT(t1, 7);			   \
+		x_##b3 = VEC16_ROT(t2, 7);			   \
+		x_##b4 = VEC16_ROT(t3, 7);			   \
+	}
+
 #define VEC16_ROUND_SEQ(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)     \
   VEC16_LINE1(a1,b1,c1,d1);                                              \
   VEC16_LINE1(a2,b2,c2,d2);                                              \
@@ -34,6 +95,13 @@ Public domain.
   VEC16_LINE4(a3,b3,c3,d3);                                              \
   VEC16_LINE4(a4,b4,c4,d4)
 
+#define VEC16_ROUND_INTER(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)     \
+	VEC16_4L1(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)\
+	VEC16_4L2(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)\
+	VEC16_4L3(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)\
+	VEC16_4L4(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)
+
+/* SEQ seems faster than INTER on KNL, and nearly identical on SKX */
 #define VEC16_ROUND(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4) VEC16_ROUND_SEQ(a1,b1,c1,d1,a2,b2,c2,d2,a3,b3,c3,d3,a4,b4,c4,d4)
 
   if (!bytes) return;
@@ -173,6 +241,155 @@ if (bytes>=1024) {
 #define ONEQUAD(a,b,c,d) ONEQUAD_TRANSPOSE_SCATTERGATHER_NOXOR(a,b,c,d)
 #endif
 
+#define ALLSUMS						\
+    {							\
+	    x_0 = _mm512_add_epi32(x_0, orig0);		\
+	    x_1 = _mm512_add_epi32(x_1, orig1);		\
+	    x_2 = _mm512_add_epi32(x_2, orig2);		\
+	    x_3 = _mm512_add_epi32(x_3, orig3);		\
+	    x_4 = _mm512_add_epi32(x_4, orig4);		\
+	    x_5 = _mm512_add_epi32(x_5, orig5);		\
+	    x_6 = _mm512_add_epi32(x_6, orig6);		\
+	    x_7 = _mm512_add_epi32(x_7, orig7);		\
+	    x_8 = _mm512_add_epi32(x_8, orig8);		\
+	    x_9 = _mm512_add_epi32(x_9, orig9);		\
+	    x_10 = _mm512_add_epi32(x_10, orig10);	\
+	    x_11 = _mm512_add_epi32(x_11, orig11);	\
+	    x_12 = _mm512_add_epi32(x_12, orig12);	\
+	    x_13 = _mm512_add_epi32(x_13, orig13);	\
+	    x_14 = _mm512_add_epi32(x_14, orig14);	\
+	    x_15 = _mm512_add_epi32(x_15, orig15);	\
+    }
+
+#define ALLTRANS						\
+	{						\
+		__m512i t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15; \
+		t0 = _mm512_unpacklo_epi32(x_0,x_1);			\
+		t1 = _mm512_unpackhi_epi32(x_0,x_1);			\
+		t2 = _mm512_unpacklo_epi32(x_2,x_3);			\
+		t3 = _mm512_unpackhi_epi32(x_2,x_3);			\
+		t4 = _mm512_unpacklo_epi32(x_4,x_5);			\
+		t5 = _mm512_unpackhi_epi32(x_4,x_5);			\
+		t6 = _mm512_unpacklo_epi32(x_6,x_7);			\
+		t7 = _mm512_unpackhi_epi32(x_6,x_7);			\
+		t8 = _mm512_unpacklo_epi32(x_8,x_9);			\
+		t9 = _mm512_unpackhi_epi32(x_8,x_9);			\
+		t10 = _mm512_unpacklo_epi32(x_10,x_11);			\
+		t11 = _mm512_unpackhi_epi32(x_10,x_11);			\
+		t12 = _mm512_unpacklo_epi32(x_12,x_13);			\
+		t13 = _mm512_unpackhi_epi32(x_12,x_13);			\
+		t14 = _mm512_unpacklo_epi32(x_14,x_15);			\
+		t15 = _mm512_unpackhi_epi32(x_14,x_15);			\
+									\
+		x_0 = _mm512_unpacklo_epi64(t0,t2);			\
+		x_1 = _mm512_unpackhi_epi64(t0,t2);			\
+		x_2 = _mm512_unpacklo_epi64(t1,t3);			\
+		x_3 = _mm512_unpackhi_epi64(t1,t3);			\
+		x_4 = _mm512_unpacklo_epi64(t4,t6);			\
+		x_5 = _mm512_unpackhi_epi64(t4,t6);			\
+		x_6 = _mm512_unpacklo_epi64(t5,t7);			\
+		x_7 = _mm512_unpackhi_epi64(t5,t7);			\
+		x_8 = _mm512_unpacklo_epi64(t8,t10);			\
+		x_9 = _mm512_unpackhi_epi64(t8,t10);			\
+		x_10 = _mm512_unpacklo_epi64(t9,t11);			\
+		x_11 = _mm512_unpackhi_epi64(t9,t11);			\
+		x_12 = _mm512_unpacklo_epi64(t12,t14);			\
+		x_13 = _mm512_unpackhi_epi64(t12,t14);			\
+		x_14 = _mm512_unpacklo_epi64(t13,t15);			\
+		x_15 = _mm512_unpackhi_epi64(t13,t15);			\
+									\
+		t0 = _mm512_shuffle_i32x4(x_0, x_4, 0x88);		\
+		t1 = _mm512_shuffle_i32x4(x_1, x_5, 0x88);		\
+		t2 = _mm512_shuffle_i32x4(x_2, x_6, 0x88);		\
+		t3 = _mm512_shuffle_i32x4(x_3, x_7, 0x88);		\
+		t4 = _mm512_shuffle_i32x4(x_0, x_4, 0xdd);		\
+		t5 = _mm512_shuffle_i32x4(x_1, x_5, 0xdd);		\
+		t6 = _mm512_shuffle_i32x4(x_2, x_6, 0xdd);		\
+		t7 = _mm512_shuffle_i32x4(x_3, x_7, 0xdd);		\
+		t8 = _mm512_shuffle_i32x4(x_8, x_12, 0x88);		\
+		t9 = _mm512_shuffle_i32x4(x_9, x_13, 0x88);		\
+		t10 = _mm512_shuffle_i32x4(x_10, x_14, 0x88);		\
+		t11 = _mm512_shuffle_i32x4(x_11, x_15, 0x88);		\
+		t12 = _mm512_shuffle_i32x4(x_8, x_12, 0xdd);		\
+		t13 = _mm512_shuffle_i32x4(x_9, x_13, 0xdd);		\
+		t14 = _mm512_shuffle_i32x4(x_10, x_14, 0xdd);		\
+		t15 = _mm512_shuffle_i32x4(x_11, x_15, 0xdd);		\
+									\
+		x_0 = _mm512_shuffle_i32x4(t0, t8, 0x88);		\
+		x_1 = _mm512_shuffle_i32x4(t1, t9, 0x88);		\
+		x_2 = _mm512_shuffle_i32x4(t2, t10, 0x88);		\
+		x_3 = _mm512_shuffle_i32x4(t3, t11, 0x88);		\
+		x_4 = _mm512_shuffle_i32x4(t4, t12, 0x88);		\
+		x_5 = _mm512_shuffle_i32x4(t5, t13, 0x88);		\
+		x_6 = _mm512_shuffle_i32x4(t6, t14, 0x88);		\
+		x_7 = _mm512_shuffle_i32x4(t7, t15, 0x88);		\
+		x_8 = _mm512_shuffle_i32x4(t0, t8, 0xdd);		\
+		x_9 = _mm512_shuffle_i32x4(t1, t9, 0xdd);		\
+		x_10 = _mm512_shuffle_i32x4(t2, t10, 0xdd);		\
+		x_11 = _mm512_shuffle_i32x4(t3, t11, 0xdd);		\
+		x_12 = _mm512_shuffle_i32x4(t4, t12, 0xdd);		\
+		x_13 = _mm512_shuffle_i32x4(t5, t13, 0xdd);		\
+		x_14 = _mm512_shuffle_i32x4(t6, t14, 0xdd);		\
+		x_15 = _mm512_shuffle_i32x4(t7, t15, 0xdd);		\
+	}
+#define ALLXOR					\
+    {									\
+	    x_0 = _mm512_xor_si512(x_0, _mm512_loadu_si512((const long long*)(m+64*0))); \
+	    x_1 = _mm512_xor_si512(x_1, _mm512_loadu_si512((const long long*)(m+64*1))); \
+	    x_2 = _mm512_xor_si512(x_2, _mm512_loadu_si512((const long long*)(m+64*2))); \
+	    x_3 = _mm512_xor_si512(x_3, _mm512_loadu_si512((const long long*)(m+64*3))); \
+	    x_4 = _mm512_xor_si512(x_4, _mm512_loadu_si512((const long long*)(m+64*4))); \
+	    x_5 = _mm512_xor_si512(x_5, _mm512_loadu_si512((const long long*)(m+64*5))); \
+	    x_6 = _mm512_xor_si512(x_6, _mm512_loadu_si512((const long long*)(m+64*6))); \
+	    x_7 = _mm512_xor_si512(x_7, _mm512_loadu_si512((const long long*)(m+64*7))); \
+	    x_8 = _mm512_xor_si512(x_8, _mm512_loadu_si512((const long long*)(m+64*8))); \
+	    x_9 = _mm512_xor_si512(x_9, _mm512_loadu_si512((const long long*)(m+64*9))); \
+	    x_10 = _mm512_xor_si512(x_10, _mm512_loadu_si512((const long long*)(m+64*10))); \
+	    x_11 = _mm512_xor_si512(x_11, _mm512_loadu_si512((const long long*)(m+64*11))); \
+	    x_12 = _mm512_xor_si512(x_12, _mm512_loadu_si512((const long long*)(m+64*12))); \
+	    x_13 = _mm512_xor_si512(x_13, _mm512_loadu_si512((const long long*)(m+64*13))); \
+	    x_14 = _mm512_xor_si512(x_14, _mm512_loadu_si512((const long long*)(m+64*14))); \
+	    x_15 = _mm512_xor_si512(x_15, _mm512_loadu_si512((const long long*)(m+64*15))); \
+	}
+#define ALLSTORE							\
+    {									\
+		_mm512_storeu_si512((long long*)(out+64*0), x_0);	\
+		_mm512_storeu_si512((long long*)(out+64*1), x_1);	\
+		_mm512_storeu_si512((long long*)(out+64*2), x_2);	\
+		_mm512_storeu_si512((long long*)(out+64*3), x_3);	\
+		_mm512_storeu_si512((long long*)(out+64*4), x_4);	\
+		_mm512_storeu_si512((long long*)(out+64*5), x_5);	\
+		_mm512_storeu_si512((long long*)(out+64*6), x_6);	\
+		_mm512_storeu_si512((long long*)(out+64*7), x_7);	\
+		_mm512_storeu_si512((long long*)(out+64*8), x_8);	\
+		_mm512_storeu_si512((long long*)(out+64*9), x_9);	\
+		_mm512_storeu_si512((long long*)(out+64*10), x_10);	\
+		_mm512_storeu_si512((long long*)(out+64*11), x_11);	\
+		_mm512_storeu_si512((long long*)(out+64*12), x_12);	\
+		_mm512_storeu_si512((long long*)(out+64*13), x_13);	\
+		_mm512_storeu_si512((long long*)(out+64*14), x_14);	\
+		_mm512_storeu_si512((long long*)(out+64*15), x_15);	\
+	}
+
+#ifndef CHACHA_NO_XOR
+#define DOALL				\
+    {					\
+	  ALLSUMS			\
+	  ALLTRANS			\
+	  ALLXOR			\
+	  ALLSTORE			\
+    }
+#else
+#define DOALL				\
+    {					\
+	  ALLSUMS			\
+	  ALLTRANS			\
+	  ALLSTORE			\
+    }
+#endif
+
+    /* the transpose seems faster on both KNL & SKX */
+#if 0
     ONEQUAD(0,1,2,3);
     m+=16;
     out+=16;
@@ -185,7 +402,16 @@ if (bytes>=1024) {
     ONEQUAD(12,13,14,15);
     m-=48;
     out-=48;
+#else
+    DOALL
+#endif
 
+#undef ALLSUMS
+#undef ALLTRANS
+#undef ALLXOR
+#undef ALLSTORE
+#undef ALLXORSTORE
+#undef DOALL
 #undef ONEQUAD
 #undef ONEQUAD_TRANSPOSE
 #undef ONEQUAD_TRANSPOSE_SCATTERGATHER
@@ -200,5 +426,11 @@ if (bytes>=1024) {
 #undef VEC16_LINE2
 #undef VEC16_LINE3
 #undef VEC16_LINE4
+#undef VEC16_4L1
+#undef VEC16_4L2
+#undef VEC16_4L3
+#undef VEC16_4L4
 #undef VEC16_ROUND
 #undef VEC16_ROUND_SEQ
+#undef VEC16_ROUND_INTER
+

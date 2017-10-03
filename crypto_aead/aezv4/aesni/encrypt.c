@@ -8,7 +8,7 @@
  //               - Max 2^32-1 byte buffers allowed (due to use of unsigned int)
  //
  // Written by Ted Krovetz (ted@krovetz.net). Last modified 15 October 2015.
- //
+ //                                           Patched July 26, 2017
  // This is free and unencumbered software released into the public domain.
  //
  // Anyone is free to copy, modify, publish, use, compile, sell, or
@@ -36,6 +36,7 @@
  */
 
 #include "crypto_aead.h"
+#include <stddef.h>
 
 /* ------------------------------------------------------------------------- */
 #if __AES__                /* Defined by gcc/clang when compiling for AES-NI */
@@ -127,13 +128,13 @@ int is_zero(block x) {         /* 0 or 1 */
 
 block srl4(block x) {
     const block mask = {15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,0};
-    uint8x16_t tmp = vandq_u8(vshrq_n_s8(vextq_u8(x, x, 1),4),mask);
+    uint8x16_t tmp = vandq_u8(vshrq_n_u8(vextq_u8(x, x, 1),4),mask);
     return veorq_u8(tmp,vshlq_n_u8(x,4));
 }
 
 block sll4(block x) {
     const block mask = {0,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15};
-    uint8x16_t tmp = vshlq_n_s8(vandq_u8(vextq_u8(x, x, 15),mask),4);
+    uint8x16_t tmp = vshlq_n_u8(vandq_u8(vextq_u8(x, x, 15),mask),4);
     return veorq_u8(tmp,vshrq_n_u8(x,4));
 }
 
@@ -141,7 +142,7 @@ static uint8x16_t bswap16(uint8x16_t b) { return b; } /* Not with uint8x16_t */
 
 static block double_block(block b) {
     const block mask = {135,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
-    block tmp = vshrq_n_s8((int8x16_t)b,7);
+    block tmp = (block)vshrq_n_s8((int8x16_t)b,7);
     tmp = vandq_u8(tmp, mask);
     tmp = vextq_u8(tmp, tmp, 1);  /* Rotate high byte to low end */
     b = vshlq_n_u8(b,1);

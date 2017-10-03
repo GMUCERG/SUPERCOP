@@ -1,16 +1,8 @@
 #include <stdlib.h>
-#include "randombytes.h"
+#include "kernelrandombytes.h"
 #include "cpucycles.h"
 #include "crypto_scalarmult.h"
-
-extern void printentry(long long,const char *,long long *,long long);
-extern unsigned char *alignedcalloc(unsigned long long);
-extern const char *primitiveimplementation;
-extern const char *implementationversion;
-extern const char *sizenames[];
-extern const long long sizes[];
-extern void allocate(void);
-extern void measure(void);
+#include "measure.h"
 
 const char *primitiveimplementation = crypto_scalarmult_IMPLEMENTATION;
 const char *implementationversion = crypto_scalarmult_VERSION;
@@ -43,8 +35,8 @@ void measure(void)
   int loop;
 
   for (loop = 0;loop < LOOPS;++loop) {
-    randombytes(m,crypto_scalarmult_SCALARBYTES);
-    randombytes(n,crypto_scalarmult_SCALARBYTES);
+    kernelrandombytes(m,crypto_scalarmult_SCALARBYTES);
+    kernelrandombytes(n,crypto_scalarmult_SCALARBYTES);
     for (i = 0;i <= TIMINGS;++i) {
       cycles[i] = cpucycles();
       crypto_scalarmult_base(p,m);

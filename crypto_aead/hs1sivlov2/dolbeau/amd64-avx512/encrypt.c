@@ -232,6 +232,7 @@ static inline void chacha_xor(chacha_ctx_t *x_,const unsigned char *m,unsigned c
 
 #if defined(__AVX512F__)
 #include "u16.h"
+#include "u16mask.h"
 #endif
 
 #if 1

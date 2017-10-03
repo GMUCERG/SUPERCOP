@@ -1041,8 +1041,8 @@ _aes_big_constants:
 	.long	370555436
 	.text
 	.align 2
-	.globl _ECRYPT_init
-_ECRYPT_init:
+	.globl _crypto_stream_lexv2_e_v2_schwabe_ppc32macos_1_ECRYPT_init
+_crypto_stream_lexv2_e_v2_schwabe_ppc32macos_1_ECRYPT_init:
 	stmw r30,-8(r1)
 	stwu r1,-48(r1)
 	mr r30,r1
@@ -1050,8 +1050,8 @@ _ECRYPT_init:
 	lmw r30,-8(r1)
 	blr
 	.align 2
-	.globl _ECRYPT_keysetup
-_ECRYPT_keysetup:
+	.globl _crypto_stream_lexv2_e_v2_schwabe_ppc32macos_1_ECRYPT_keysetup
+_crypto_stream_lexv2_e_v2_schwabe_ppc32macos_1_ECRYPT_keysetup:
 	stmw r30,-8(r1)
 	stwu r1,-80(r1)
 	mr r30,r1
@@ -1221,8 +1221,8 @@ L4:
 	lmw r30,-8(r1)
 	blr
 	.align 2
-	.globl _ECRYPT_process_bytes_C
-_ECRYPT_process_bytes_C:
+	.globl _crypto_stream_lexv2_e_v2_schwabe_ppc32macos_1_ECRYPT_process_bytes_C
+_crypto_stream_lexv2_e_v2_schwabe_ppc32macos_1_ECRYPT_process_bytes_C:
 	stmw r30,-8(r1)
 	stwu r1,-368(r1)
 	mr r30,r1

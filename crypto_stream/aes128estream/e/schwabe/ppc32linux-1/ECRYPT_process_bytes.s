@@ -335,13 +335,13 @@
 
 # qhasm: stack32 i29_stack
 
-# qhasm: enter ECRYPT_process_bytes
+# qhasm: enter crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_process_bytes
 .text
 .align 3
-.globl _ECRYPT_process_bytes
-.globl ECRYPT_process_bytes
-_ECRYPT_process_bytes:
-ECRYPT_process_bytes:
+.globl _crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_process_bytes
+.globl crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_process_bytes
+_crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_process_bytes:
+crypto_stream_aes128estream_e_schwabe_ppc32linux_1_ECRYPT_process_bytes:
 stwu 1,-416(1)
 
 # qhasm: =? (uint32) length - 0
