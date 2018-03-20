@@ -1,3 +1,5 @@
+/* See https://ntruprime.cr.yp.to/software.html for detailed documentation. */
+
 #include "params.h"
 #include "swap.h"
 #include "rq.h"

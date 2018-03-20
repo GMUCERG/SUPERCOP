@@ -1,3 +1,5 @@
+/* See https://ntruprime.cr.yp.to/software.html for detailed documentation. */
+
 #include "swap.h"
 
 void swap(void *x,void *y,int bytes,int mask)

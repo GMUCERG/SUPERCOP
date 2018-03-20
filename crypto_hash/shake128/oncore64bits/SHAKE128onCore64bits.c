@@ -11,7 +11,7 @@ and related or neighboring rights to the source code in this file.
 http://creativecommons.org/publicdomain/zero/1.0/
 */
 
-#include "crypto_core_keccakf1600_64bits.h"
+#include "crypto_core_keccakf160064bits.h"
 #include "crypto_hash.h"
 #ifndef crypto_hash_BYTES
     #define crypto_hash_BYTES 168

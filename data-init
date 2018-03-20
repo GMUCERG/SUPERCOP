@@ -256,7 +256,7 @@ do
               echo gmp
               echo ntl
               ;;
-            libkeccak.a.headers)
+            libkeccak.a.headers/*)
               echo keccak
               ;;
             crypto_*_*)

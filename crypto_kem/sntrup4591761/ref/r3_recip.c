@@ -1,3 +1,5 @@
+/* See https://ntruprime.cr.yp.to/software.html for detailed documentation. */
+
 #include "params.h"
 #include "mod3.h"
 #include "swap.h"

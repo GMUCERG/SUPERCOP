@@ -1,3 +1,5 @@
+/* See https://ntruprime.cr.yp.to/software.html for detailed documentation. */
+
 #include "params.h"
 #include "randombytes.h"
 #include "int32_sort.h"

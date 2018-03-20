@@ -1,3 +1,9 @@
+/* See https://ntruprime.cr.yp.to/software.html for detailed documentation. */
+
+#ifdef KAT
+#include <stdio.h>
+#endif
+
 #include "params.h"
 #include "small.h"
 #include "mod3.h"
@@ -37,6 +43,17 @@ int crypto_kem_dec(
   for (i = 0;i < p;++i) t3[i] = mod3_freeze(modq_freeze(3*t[i]));
 
   r3_mult(r,t3,grecip);
+
+#ifdef KAT
+  {
+    int j;
+    printf("decrypt r:");
+    for (j = 0;j < p;++j)
+      if (r[j] == 1) printf(" +%d",j);
+      else if (r[j] == -1) printf(" -%d",j);
+    printf("\n");
+  }
+#endif
 
   weight = 0;
   for (i = 0;i < p;++i) weight += (1 & r[i]);

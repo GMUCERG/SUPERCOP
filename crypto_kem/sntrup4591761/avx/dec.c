@@ -1,3 +1,7 @@
+#ifdef KAT
+#include <stdio.h>
+#endif
+
 #include "params.h"
 #include "small.h"
 #include "mod3.h"
@@ -25,7 +29,6 @@ int crypto_kem_dec(
   unsigned char hash[64];
   int i;
   int result = 0;
-  int weight;
 
   small_decode(f,sk);
   small_decode(grecip,sk + small_encode_len);
@@ -37,6 +40,17 @@ int crypto_kem_dec(
   rq_mod3(t3,t);
 
   r3_mult(r,t3,grecip);
+
+#ifdef KAT
+  {
+    int j;
+    printf("decrypt r:");
+    for (j = 0;j < p;++j)
+      if (r[j] == 1) printf(" +%d",j);
+      else if (r[j] == -1) printf(" -%d",j);
+    printf("\n");
+  }
+#endif
 
   result |= r3_weightw_mask(r);
 

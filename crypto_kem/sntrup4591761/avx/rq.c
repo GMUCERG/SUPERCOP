@@ -58,8 +58,7 @@ void rq_encode(unsigned char *c,const modq *f)
 
 void rq_decode(modq *f,const unsigned char *c)
 {
-  crypto_uint32 c0, c1, c2, c3, c4, c5, c6, c7;
-  crypto_uint32 f0, f1, f2, f3, f4;
+  crypto_uint32 c0, c1;
   int i;
 
   for (i = 0;i < 152;i += 4) {
