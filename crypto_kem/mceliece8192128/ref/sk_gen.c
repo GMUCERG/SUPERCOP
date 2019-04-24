@@ -1,3 +1,7 @@
+/*
+  This file is for secret-key generation
+*/
+
 #include "sk_gen.h"
 
 #include "randombytes.h"
@@ -10,6 +14,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* input: f, an element in GF((2^m)^t) */
+/* output: out, the generating polynomial of f (first t coefficients only) */
+/* return: 0 for success, -1 for failure*/
 static int irr_gen(gf *out, gf *f)
 {
 	int i, j, k, c;
@@ -71,13 +78,44 @@ static int irr_gen(gf *out, gf *f)
 	return 0;
 }
 
-int sk_gen(unsigned char *sk)
+/* input: permutation represented by 32-bit integers */
+/* output: an equivalent permutation represented by integers in {0, ..., 2^m-1} */
+/* return  0 if no repeated intergers in the input */
+/* return -1 if there are repeated intergers in the input */
+int perm_conversion(uint32_t * perm)
+{
+	int i;
+	uint64_t L[ 1 << GFBITS ];
+
+	for (i = 0; i < (1 << GFBITS); i++)
+	{
+		L[i] = perm[i];
+		L[i] <<= 31;
+		L[i] |= i;
+	}
+
+	sort_63b(1 << GFBITS, L);
+
+	for (i = 1; i < (1 << GFBITS); i++)
+		if ((L[i-1] >> 31) == (L[i] >> 31))
+			return -1;
+
+	for (i = 0; i < (1 << GFBITS); i++)
+		perm[i] = L[i] & GFMASK;
+
+	return 0;
+}
+
+/* output: sk, the secret key */
+int sk_part_gen(unsigned char *sk)
 {
 	int i;
 
 	gf g[ SYS_T ]; // irreducible polynomial
 	gf a[ SYS_T ]; // random element in GF(2^mt)
-	
+
+	uint32_t perm[ 1 << GFBITS ]; // random permutation
+
 	while (1)
 	{
 		randombytes((unsigned char *) a, sizeof(a)); 
@@ -87,12 +125,17 @@ int sk_gen(unsigned char *sk)
 		if ( irr_gen(g, a) == 0 ) break;
 	}
 
+	while (1)
+	{
+		randombytes((unsigned char *) perm, sizeof(perm));
+
+		if (perm_conversion(perm) == 0) break;
+	}
+
 	for (i = 0; i < SYS_T; i++) 
 		store2( sk + SYS_N/8 + i*2, g[i] );
 
-	randombytes(sk, SYS_N/8);
-
-	controlbits(sk + SYS_N/8 + IRR_BYTES);
+	controlbits(sk + SYS_N/8 + IRR_BYTES, perm);
 
 	return 0;
 }

@@ -1,3 +1,7 @@
+/*
+  This file is for Nieddereiter encryption
+*/
+
 #include "encrypt.h"
 
 #include "util.h"
@@ -11,6 +15,7 @@
 
 #include "gf.h"
 
+/* output: e, an error vector of weight t */
 static void gen_e(unsigned char *e)
 {
 	int i, j, eq;
@@ -27,6 +32,8 @@ static void gen_e(unsigned char *e)
 
 		for (i = 0; i < SYS_T; i++)
 			ind[i] &= GFMASK;
+
+		// check for repetition
 
 		eq = 0;
 
@@ -60,6 +67,8 @@ static void gen_e(unsigned char *e)
 		store8(e + i*8, e_int[i]);
 }
 
+/* input: public key pk, error vector e */
+/* output: syndrome s */
 void syndrome(unsigned char *s, const unsigned char *pk, unsigned char *e)
 {
 	unsigned char b, row[SYS_N/8];

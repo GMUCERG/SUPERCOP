@@ -1,3 +1,7 @@
+/*
+  This file is for public-key generation
+*/
+
 #include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
@@ -9,6 +13,8 @@
 #include "root.h"
 #include "util.h"
 
+/* input: secret key sk */
+/* output: public key pk */
 int pk_gen(unsigned char * pk, unsigned char * sk)
 {
 	int i, j, k;

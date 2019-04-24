@@ -1,16 +1,17 @@
-#include <stdio.h>
+/*
+  This file is for Nieddereiter decryption
+*/
+
 #include "decrypt.h"
 
 #include "params.h"
-#include "vec128.h"
 #include "fft_tr.h"
 #include "benes.h"
 #include "util.h"
 #include "fft.h"
 #include "bm.h"
-#include "gf.h"
 
-#include <stdint.h>
+#include <stdio.h>
 
 static void scaling(vec128 out[][GFBITS], vec128 inv[][GFBITS], const unsigned char *sk, vec128 *recv)
 {
@@ -101,6 +102,11 @@ static uint64_t synd_cmp(vec128 s0[][ GFBITS ] , vec128 s1[][ GFBITS ])
 	return vec128_testz(diff);
 }
 
+/* Nieddereiter decryption with the Berlekamp decoder */
+/* intput: sk, secret key */
+/*         s, ciphertext (syndrome) */
+/* output: e, error vector */
+/* return: 0 for success; 1 for failure */
 int decrypt(unsigned char *e, const unsigned char *sk, const unsigned char *s)
 {
 	int i;
@@ -121,10 +127,14 @@ int decrypt(unsigned char *e, const unsigned char *sk, const unsigned char *s)
 	vec128 recv[ 64 ];
 	vec128 allone;
 
-	//
+	vec128 bits_int[25][32];
+
+	// Berlekamp decoder
 
 	preprocess(recv, s);
-	benes(recv, sk + IRR_BYTES, 1);
+
+	load_bits(bits_int, sk + IRR_BYTES);
+	benes(recv, bits_int, 1);
 
 	scaling(scaled, inv, sk, recv);
 	fft_tr(s_priv, scaled);
@@ -153,7 +163,7 @@ int decrypt(unsigned char *e, const unsigned char *sk, const unsigned char *s)
 
 	//
 
-	benes(error, sk + IRR_BYTES, 0);
+	benes(error, bits_int, 0);
 
 	for (i = 0; i < 64; i++)
 		store16(e + i*16, error[i]);

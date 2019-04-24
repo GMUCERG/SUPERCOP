@@ -1,15 +1,17 @@
-#include <stdio.h>
+/*
+  This file is for Nieddereiter decryption
+*/
+
 #include "decrypt.h"
 
 #include "params.h"
-#include "vec256.h"
 #include "fft_tr.h"
 #include "benes.h"
 #include "util.h"
 #include "fft.h"
 #include "bm.h"
 
-#include <stdint.h>
+#include <stdio.h>
 
 static void scaling(vec256 out[][GFBITS], vec256 inv[][GFBITS], const unsigned char *sk, vec256 *recv)
 {
@@ -100,6 +102,44 @@ static uint64_t synd_cmp(vec256 *s0 , vec256 *s1)
 	return vec256_testz(diff);
 }
 
+static void reformat_128to256(vec256 * out, vec128 * in)
+{
+	int i;
+	uint64_t v[4];
+
+	for (i = 0; i < 32; i++)
+	{
+		v[0] = vec128_extract(in[2*i+0], 0);
+		v[1] = vec128_extract(in[2*i+0], 1);
+		v[2] = vec128_extract(in[2*i+1], 0);
+		v[3] = vec128_extract(in[2*i+1], 1);
+
+		out[i] = vec256_set4x(v[0], v[1], v[2], v[3]);
+	}
+}
+
+static void reformat_256to128(vec128 * out, vec256 * in)
+{
+	int i;
+	uint64_t v[4];
+
+	for (i = 0; i < 32; i++)
+	{
+		v[0] = vec256_extract(in[i], 0);
+		v[1] = vec256_extract(in[i], 1);
+		v[2] = vec256_extract(in[i], 2);
+		v[3] = vec256_extract(in[i], 3);
+
+		out[2*i+0] = vec128_set2x(v[0], v[1]);
+		out[2*i+1] = vec128_set2x(v[2], v[3]);
+	}
+}
+
+/* Nieddereiter decryption with the Berlekamp decoder */
+/* intput: sk, secret key */
+/*         s, ciphertext (syndrome) */
+/* output: e, error vector */
+/* return: 0 for success; 1 for failure */
 int decrypt(unsigned char *e, const unsigned char *sk, const unsigned char *s)
 {
 	int i;
@@ -111,21 +151,28 @@ int decrypt(unsigned char *e, const unsigned char *sk, const unsigned char *s)
 	vec256 scaled[ 64 ][ GFBITS ];
 	vec256 eval[ 64 ][ GFBITS ];
 
-	vec256 error[ 32 ];
+	vec128 error128[ 64 ];
+	vec256 error256[ 32 ];
 
 	vec256 s_priv[ GFBITS ];
 	vec256 s_priv_cmp[ GFBITS ];
 	vec128 locator[ GFBITS ];
 
-	vec256 recv[ 32 ];
+	vec128 recv128[ 64 ];
+	vec256 recv256[ 32 ];
 	vec256 allone;
 
-	//
+	vec128 bits_int[25][32];
 
-	preprocess((vec128*) recv, s);
-	benes((vec128 *) recv, sk + IRR_BYTES, 1);
+	// Berlekamp decoder
 
-	scaling(scaled, inv, sk, recv); // scaling
+	preprocess(recv128, s);
+
+	load_bits(bits_int, sk + IRR_BYTES);
+	benes(recv128, bits_int, 1); 
+	reformat_128to256(recv256, recv128);
+
+	scaling(scaled, inv, sk, recv256); // scaling
 	fft_tr(s_priv, scaled); // transposed FFT
 	bm(locator, s_priv); // Berlekamp Massey
 
@@ -137,25 +184,26 @@ int decrypt(unsigned char *e, const unsigned char *sk, const unsigned char *s)
 
 	for (i = 0; i < 32; i++)
 	{
-		error[i] = vec256_or_reduce(eval[i]);
-		error[i] = vec256_xor(error[i], allone);
+		error256[i] = vec256_or_reduce(eval[i]);
+		error256[i] = vec256_xor(error256[i], allone);
 	}
 
-	check_weight = weight(error) ^ SYS_T;
+	check_weight = weight(error256) ^ SYS_T;
 	check_weight -= 1;
 	check_weight >>= 15;
 
-	scaling_inv(scaled, inv, error);
+	scaling_inv(scaled, inv, error256);
 	fft_tr(s_priv_cmp, scaled);
 
 	check_synd = synd_cmp(s_priv, s_priv_cmp);
 
 	//
 
-	benes((vec128 *) error, sk + IRR_BYTES, 0);
+	reformat_256to128(error128, error256);
+	benes(error128, bits_int, 0);
 
-	for (i = 0; i < 32; i++)
-		store32(e + i*32, error[i]);
+	for (i = 0; i < 64; i++)
+		store16(e + i*16, error128[i]);
 
 #ifdef KAT
   {

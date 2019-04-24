@@ -1,31 +1,37 @@
+/*
+  This file is for transpose of the Gao-Mateer FFT
+  Functions with names ending with _tr are the transpose of the corresponding functions in fft.c
+*/
+
 #include "fft_tr.h"
 
 #include "transpose.h"
 
 #include <stdint.h>
 
-static void radix_conversions_tr(u256 *in)
+static void radix_conversions_tr(vec256 *in)
 {
 	int i, j, k;
 	vec256 t;
+	uint64_t v[4];
 
-	const u256 mask[6][2] = 
+	const vec256 mask[6][2] = 
 	{
-		{{{{{0x2222222222222222, 0x2222222222222222}}, {{0x2222222222222222, 0x2222222222222222}}}},
-		 {{{{0x4444444444444444, 0x4444444444444444}}, {{0x4444444444444444, 0x4444444444444444}}}}},
-		{{{{{0x0C0C0C0C0C0C0C0C, 0x0C0C0C0C0C0C0C0C}}, {{0x0C0C0C0C0C0C0C0C, 0x0C0C0C0C0C0C0C0C}}}},
-		 {{{{0x3030303030303030, 0x3030303030303030}}, {{0x3030303030303030, 0x3030303030303030}}}}},
-		{{{{{0x00F000F000F000F0, 0x00F000F000F000F0}}, {{0x00F000F000F000F0, 0x00F000F000F000F0}}}},
-		 {{{{0x0F000F000F000F00, 0x0F000F000F000F00}}, {{0x0F000F000F000F00, 0x0F000F000F000F00}}}}},
-		{{{{{0x0000FF000000FF00, 0x0000FF000000FF00}}, {{0x0000FF000000FF00, 0x0000FF000000FF00}}}},
-		 {{{{0x00FF000000FF0000, 0x00FF000000FF0000}}, {{0x00FF000000FF0000, 0x00FF000000FF0000}}}}},
-		{{{{{0x00000000FFFF0000, 0x00000000FFFF0000}}, {{0x00000000FFFF0000, 0x00000000FFFF0000}}}},
-		 {{{{0x0000FFFF00000000, 0x0000FFFF00000000}}, {{0x0000FFFF00000000, 0x0000FFFF00000000}}}}},
-		{{{{{0xFFFFFFFF00000000, 0xFFFFFFFF00000000}}, {{0xFFFFFFFF00000000, 0xFFFFFFFF00000000}}}},
-		 {{{{0x00000000FFFFFFFF, 0x00000000FFFFFFFF}}, {{0x00000000FFFFFFFF, 0x00000000FFFFFFFF}}}}}
+		{vec256_set4x(0x2222222222222222, 0x2222222222222222, 0x2222222222222222, 0x2222222222222222),
+		 vec256_set4x(0x4444444444444444, 0x4444444444444444, 0x4444444444444444, 0x4444444444444444)},
+		{vec256_set4x(0x0C0C0C0C0C0C0C0C, 0x0C0C0C0C0C0C0C0C, 0x0C0C0C0C0C0C0C0C, 0x0C0C0C0C0C0C0C0C),
+		 vec256_set4x(0x3030303030303030, 0x3030303030303030, 0x3030303030303030, 0x3030303030303030)},
+		{vec256_set4x(0x00F000F000F000F0, 0x00F000F000F000F0, 0x00F000F000F000F0, 0x00F000F000F000F0),
+		 vec256_set4x(0x0F000F000F000F00, 0x0F000F000F000F00, 0x0F000F000F000F00, 0x0F000F000F000F00)},
+		{vec256_set4x(0x0000FF000000FF00, 0x0000FF000000FF00, 0x0000FF000000FF00, 0x0000FF000000FF00),
+		 vec256_set4x(0x00FF000000FF0000, 0x00FF000000FF0000, 0x00FF000000FF0000, 0x00FF000000FF0000)},
+		{vec256_set4x(0x00000000FFFF0000, 0x00000000FFFF0000, 0x00000000FFFF0000, 0x00000000FFFF0000),
+		 vec256_set4x(0x0000FFFF00000000, 0x0000FFFF00000000, 0x0000FFFF00000000, 0x0000FFFF00000000)},
+		{vec256_set4x(0xFFFFFFFF00000000, 0xFFFFFFFF00000000, 0xFFFFFFFF00000000, 0xFFFFFFFF00000000),
+		 vec256_set4x(0x00000000FFFFFFFF, 0x00000000FFFFFFFF, 0x00000000FFFFFFFF, 0x00000000FFFFFFFF)}
 	};
 
-	const u256 s[6][GFBITS] = 
+	vec256 s[6][GFBITS] = 
 	{
 #include "scalars13_4x.data"
 	};
@@ -36,40 +42,54 @@ static void radix_conversions_tr(u256 *in)
 	{
 		if (j < 6)
 		{
-			vec256_mul((vec256 *) in, (vec256 *) in, (vec256 *) s[j]); // scaling
+			vec256_mul(in, in, s[j]); // scaling
 		}
 
 		for (k = j; k <= 4; k++)
 		for (i = 0; i < GFBITS; i++)
 		{
-			t = vec256_and(in[i].v, mask[k][0].v);
+			t = vec256_and(in[i], mask[k][0]);
 			t = vec256_sll_4x(t, 1 << k);
-			in[i].v = vec256_xor(in[i].v, t);
+			in[i] = vec256_xor(in[i], t);
 
-			t = vec256_and(in[i].v, mask[k][1].v);
+			t = vec256_and(in[i], mask[k][1]);
 			t = vec256_sll_4x(t, 1 << k);
-			in[i].v = vec256_xor(in[i].v, t);
+			in[i] = vec256_xor(in[i], t);
 		}
 
 		if (j <= 5)
 		for (i = 0; i < GFBITS; i++)
 		{
-			in[i].s[0].s[1] ^= (in[i].s[0].s[0] >> 32);
-			in[i].s[0].s[1] ^= (in[i].s[0].s[1] << 32);
-			in[i].s[1].s[1] ^= (in[i].s[1].s[0] >> 32);
-			in[i].s[1].s[1] ^= (in[i].s[1].s[1] << 32);
+			v[0] = vec256_extract(in[i], 0);		
+			v[1] = vec256_extract(in[i], 1);		
+			v[2] = vec256_extract(in[i], 2);		
+			v[3] = vec256_extract(in[i], 3);		
+
+			v[1] ^= v[0] >> 32;
+			v[1] ^= v[1] << 32;
+			v[3] ^= v[2] >> 32;
+			v[3] ^= v[3] << 32;
+
+			in[i] = vec256_set4x(v[0], v[1], v[2], v[3]);
 		}
 
 		for (i = 0; i < GFBITS; i++)
 		{
-			in[i].s[1].s[0] ^= in[i].s[0].s[1];
-			in[i].s[1].s[1] ^= in[i].s[1].s[0];
+			v[0] = vec256_extract(in[i], 0);		
+			v[1] = vec256_extract(in[i], 1);		
+			v[2] = vec256_extract(in[i], 2);		
+			v[3] = vec256_extract(in[i], 3);		
+	
+			v[2] ^= v[1];
+			v[3] ^= v[2];
+
+			in[i] = vec256_set4x(v[0], v[1], v[2], v[3]);
 		}
 
 	}
 }
 
-static void butterflies_tr(u256 *out, vec256 in[][ GFBITS ])
+static void butterflies_tr(vec256 *out, vec256 in[][ GFBITS ])
 {
 	int i, j, k, s, b;
 
@@ -77,48 +97,50 @@ static void butterflies_tr(u256 *out, vec256 in[][ GFBITS ])
 	vec256 tmp1[ GFBITS ];
 	vec128 tmp[ GFBITS ];
 
+	vec128 out128[ GFBITS ][ 2 ];
 	vec128 pre[ 6  ][ GFBITS ];
 	vec128 buf[ 64 ];
 
-	u256 consts128[ GFBITS ] =
+	vec256 consts128[ GFBITS ] =
 	{
-		{{{{0XA55A5AA55AA5A55A, 0XA55A5AA55AA5A55A}}, {{0XA55A5AA55AA5A55A, 0XA55A5AA55AA5A55A}}}},
-		{{{{0X6969696996969696, 0X6969696996969696}}, {{0X6969696996969696, 0X6969696996969696}}}},
-		{{{{0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A}}, {{0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A}}}},
-		{{{{0X9999999966666666, 0X6666666699999999}}, {{0X9999999966666666, 0X6666666699999999}}}},
-		{{{{0X3C3CC3C3C3C33C3C, 0XC3C33C3C3C3CC3C3}}, {{0X3C3CC3C3C3C33C3C, 0XC3C33C3C3C3CC3C3}}}},
-		{{{{0XFFFF0000FFFF0000, 0X0000FFFF0000FFFF}}, {{0XFFFF0000FFFF0000, 0X0000FFFF0000FFFF}}}},
-		{{{{0X0000000000000000, 0X0000000000000000}}, {{0X0000000000000000, 0X0000000000000000}}}},
-		{{{{0XCC33CC3333CC33CC, 0X33CC33CCCC33CC33}}, {{0XCC33CC3333CC33CC, 0X33CC33CCCC33CC33}}}},
-		{{{{0X0000000000000000, 0X0000000000000000}}, {{0X0000000000000000, 0X0000000000000000}}}},
-		{{{{0X3C3C3C3C3C3C3C3C, 0X3C3C3C3C3C3C3C3C}}, {{0X3C3C3C3C3C3C3C3C, 0X3C3C3C3C3C3C3C3C}}}},
-		{{{{0XAA5555AAAA5555AA, 0XAA5555AAAA5555AA}}, {{0XAA5555AAAA5555AA, 0XAA5555AAAA5555AA}}}},
-		{{{{0XC33C3CC33CC3C33C, 0XC33C3CC33CC3C33C}}, {{0XC33C3CC33CC3C33C, 0XC33C3CC33CC3C33C}}}},
-		{{{{0X00FFFF0000FFFF00, 0XFF0000FFFF0000FF}}, {{0X00FFFF0000FFFF00, 0XFF0000FFFF0000FF}}}}
+		vec256_set4x(0XA55A5AA55AA5A55A, 0XA55A5AA55AA5A55A, 0XA55A5AA55AA5A55A, 0XA55A5AA55AA5A55A),
+		vec256_set4x(0X6969696996969696, 0X6969696996969696, 0X6969696996969696, 0X6969696996969696),
+		vec256_set4x(0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A),
+		vec256_set4x(0X9999999966666666, 0X6666666699999999, 0X9999999966666666, 0X6666666699999999),
+		vec256_set4x(0X3C3CC3C3C3C33C3C, 0XC3C33C3C3C3CC3C3, 0X3C3CC3C3C3C33C3C, 0XC3C33C3C3C3CC3C3),
+		vec256_set4x(0XFFFF0000FFFF0000, 0X0000FFFF0000FFFF, 0XFFFF0000FFFF0000, 0X0000FFFF0000FFFF),
+		vec256_set4x(0X0000000000000000, 0X0000000000000000, 0X0000000000000000, 0X0000000000000000),
+		vec256_set4x(0XCC33CC3333CC33CC, 0X33CC33CCCC33CC33, 0XCC33CC3333CC33CC, 0X33CC33CCCC33CC33),
+		vec256_set4x(0X0000000000000000, 0X0000000000000000, 0X0000000000000000, 0X0000000000000000),
+		vec256_set4x(0X3C3C3C3C3C3C3C3C, 0X3C3C3C3C3C3C3C3C, 0X3C3C3C3C3C3C3C3C, 0X3C3C3C3C3C3C3C3C),
+		vec256_set4x(0XAA5555AAAA5555AA, 0XAA5555AAAA5555AA, 0XAA5555AAAA5555AA, 0XAA5555AAAA5555AA),
+		vec256_set4x(0XC33C3CC33CC3C33C, 0XC33C3CC33CC3C33C, 0XC33C3CC33CC3C33C, 0XC33C3CC33CC3C33C),
+		vec256_set4x(0X00FFFF0000FFFF00, 0XFF0000FFFF0000FF, 0X00FFFF0000FFFF00, 0XFF0000FFFF0000FF)
 	};
 
-	u256 consts64[ GFBITS ] =
+	vec256 consts64[ GFBITS ] =
 	{
-		{{{{0X6969969669699696, 0X6969969669699696}}, {{0X6969969669699696, 0X6969969669699696}}}},
-		{{{{0X9966669966999966, 0X9966669966999966}}, {{0X9966669966999966, 0X9966669966999966}}}},
-		{{{{0X9966669966999966, 0X9966669966999966}}, {{0X9966669966999966, 0X9966669966999966}}}},
-		{{{{0XFF0000FF00FFFF00, 0XFF0000FF00FFFF00}}, {{0XFF0000FF00FFFF00, 0XFF0000FF00FFFF00}}}},
-		{{{{0XCC3333CCCC3333CC, 0XCC3333CCCC3333CC}}, {{0XCC3333CCCC3333CC, 0XCC3333CCCC3333CC}}}},
-		{{{{0X9966669966999966, 0X9966669966999966}}, {{0X9966669966999966, 0X9966669966999966}}}},
-		{{{{0X6666666666666666, 0X6666666666666666}}, {{0X6666666666666666, 0X6666666666666666}}}},
-		{{{{0XA55AA55AA55AA55A, 0XA55AA55AA55AA55A}}, {{0XA55AA55AA55AA55A, 0XA55AA55AA55AA55A}}}},
-		{{{{0XCCCC33333333CCCC, 0XCCCC33333333CCCC}}, {{0XCCCC33333333CCCC, 0XCCCC33333333CCCC}}}},
-		{{{{0X5A5A5A5A5A5A5A5A, 0X5A5A5A5A5A5A5A5A}}, {{0X5A5A5A5A5A5A5A5A, 0X5A5A5A5A5A5A5A5A}}}},
-		{{{{0X55AAAA55AA5555AA, 0X55AAAA55AA5555AA}}, {{0X55AAAA55AA5555AA, 0X55AAAA55AA5555AA}}}},
-		{{{{0X0FF0F00FF00F0FF0, 0X0FF0F00FF00F0FF0}}, {{0X0FF0F00FF00F0FF0, 0X0FF0F00FF00F0FF0}}}},
-		{{{{0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A}}, {{0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A}}}}
+		vec256_set4x(0X6969969669699696, 0X6969969669699696, 0X6969969669699696, 0X6969969669699696),
+		vec256_set4x(0X9966669966999966, 0X9966669966999966, 0X9966669966999966, 0X9966669966999966),
+		vec256_set4x(0X9966669966999966, 0X9966669966999966, 0X9966669966999966, 0X9966669966999966),
+		vec256_set4x(0XFF0000FF00FFFF00, 0XFF0000FF00FFFF00, 0XFF0000FF00FFFF00, 0XFF0000FF00FFFF00),
+		vec256_set4x(0XCC3333CCCC3333CC, 0XCC3333CCCC3333CC, 0XCC3333CCCC3333CC, 0XCC3333CCCC3333CC),
+		vec256_set4x(0X9966669966999966, 0X9966669966999966, 0X9966669966999966, 0X9966669966999966),
+		vec256_set4x(0X6666666666666666, 0X6666666666666666, 0X6666666666666666, 0X6666666666666666),
+		vec256_set4x(0XA55AA55AA55AA55A, 0XA55AA55AA55AA55A, 0XA55AA55AA55AA55A, 0XA55AA55AA55AA55A),
+		vec256_set4x(0XCCCC33333333CCCC, 0XCCCC33333333CCCC, 0XCCCC33333333CCCC, 0XCCCC33333333CCCC),
+		vec256_set4x(0X5A5A5A5A5A5A5A5A, 0X5A5A5A5A5A5A5A5A, 0X5A5A5A5A5A5A5A5A, 0X5A5A5A5A5A5A5A5A),
+		vec256_set4x(0X55AAAA55AA5555AA, 0X55AAAA55AA5555AA, 0X55AAAA55AA5555AA, 0X55AAAA55AA5555AA),
+		vec256_set4x(0X0FF0F00FF00F0FF0, 0X0FF0F00FF00F0FF0, 0X0FF0F00FF00F0FF0, 0X0FF0F00FF00F0FF0),
+		vec256_set4x(0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A)
 	};
 
-	u256 consts[ 31 ][ GFBITS ] =
+	vec256 consts[ 31 ][ GFBITS ] =
 	{
 #include "consts13.data"
 	};
 
+	uint64_t v[4];
 	uint64_t consts_ptr = 31;
 
 	const unsigned char reversal[] = 
@@ -145,7 +167,7 @@ static void butterflies_tr(u256 *out, vec256 in[][ GFBITS ])
 		for (j = 0; j < 32; j += 2*s)
 		for (k = j; k < j+s; k++)
 		{
-			vec256_ama_asm(in[k], in[k+s], (vec256 *) consts[ consts_ptr + (k-j) ]);
+			vec256_ama_asm(in[k], in[k+s], consts[ consts_ptr + (k-j) ]);
 		}
 
 	}
@@ -155,7 +177,7 @@ static void butterflies_tr(u256 *out, vec256 in[][ GFBITS ])
 		for (b = 0; b < GFBITS; b++) tmp0[b] = vec256_unpack_low(in[k][b], in[k+1][b]);
 		for (b = 0; b < GFBITS; b++) tmp1[b] = vec256_unpack_high(in[k][b], in[k+1][b]);
 
-		vec256_ama_asm(tmp0, tmp1, (vec256 *) consts128);
+		vec256_ama_asm(tmp0, tmp1, consts128);
 
 		for (b = 0; b < GFBITS; b++) in[k][b] = vec256_unpack_low(tmp0[b], tmp1[b]);
 		for (b = 0; b < GFBITS; b++) in[k+1][b] = vec256_unpack_high(tmp0[b], tmp1[b]);
@@ -163,7 +185,7 @@ static void butterflies_tr(u256 *out, vec256 in[][ GFBITS ])
 		for (b = 0; b < GFBITS; b++) tmp0[b] = vec256_unpack_low_2x(in[k][b], in[k+1][b]);
 		for (b = 0; b < GFBITS; b++) tmp1[b] = vec256_unpack_high_2x(in[k][b], in[k+1][b]);
 
-		vec256_ama_asm(tmp0, tmp1, (vec256 *) consts64);
+		vec256_ama_asm(tmp0, tmp1, consts64);
 
 		for (b = 0; b < GFBITS; b++) in[k+0][b] = vec256_unpack_low_2x(tmp0[b], tmp1[b]);
 		for (b = 0; b < GFBITS; b++) in[k+1][b] = vec256_unpack_high_2x(tmp0[b], tmp1[b]);
@@ -251,7 +273,7 @@ static void butterflies_tr(u256 *out, vec256 in[][ GFBITS ])
 		pre[0][i] = xor(pre[0][i], buf[2]); buf[3] = xor(buf[3], buf[2]);
 		pre[1][i] = xor(pre[1][i], buf[3]); buf[1] = xor(buf[1], buf[3]);
 	
-		pre[0][i] = xor(pre[0][i], buf[1]); out[i].s[0].v = xor(buf[0], buf[1]);
+		pre[0][i] = xor(pre[0][i], buf[1]); out128[i][0] = xor(buf[0], buf[1]);
 #undef xor
 
 	}	
@@ -262,7 +284,7 @@ static void butterflies_tr(u256 *out, vec256 in[][ GFBITS ])
 
 	vec128_mul(tmp, pre[0], tmp);
 
-	for (b = 0; b < GFBITS; b++) out[b].s[1].v = tmp[b];
+	for (b = 0; b < GFBITS; b++) out128[b][1] = tmp[b];
 
 	for (i = 1; i < 6; i++)
 	{
@@ -270,15 +292,23 @@ static void butterflies_tr(u256 *out, vec256 in[][ GFBITS ])
 
 		vec128_mul(tmp, pre[i], tmp);
 
-		for (b = 0; b < GFBITS; b++) out[b].s[1].v = vec128_xor(out[b].s[1].v, tmp[b]);
+		for (b = 0; b < GFBITS; b++) out128[b][1] = vec128_xor(out128[b][1], tmp[b]);
+	}
+
+	for (b = 0; b < GFBITS; b++)
+	{
+		v[0] = vec128_extract(out128[b][0], 0);
+		v[1] = vec128_extract(out128[b][0], 1);
+		v[2] = vec128_extract(out128[b][1], 0);
+		v[3] = vec128_extract(out128[b][1], 1);
+		
+		out[b] = vec256_set4x(v[0], v[1], v[2], v[3]);
 	}
 }
 
 void fft_tr(vec256 *out, vec256 in[][ GFBITS ])
 {
-	u256 *out_ptr = (u256 *) out;
-
-	butterflies_tr(out_ptr, in);
-	radix_conversions_tr(out_ptr);
+	butterflies_tr(out, in);
+	radix_conversions_tr(out);
 }
 

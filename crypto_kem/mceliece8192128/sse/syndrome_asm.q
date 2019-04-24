@@ -222,10 +222,8 @@ p &= e
 s ^= p
 
 buf = s
-c_all = 0
 b64 = mem64[ buf_ptr + 0 ]
-c = count(b64)
-c_all ^= c
+c_all = count(b64)
 b64 = mem64[ buf_ptr + 8 ]
 c = count(b64)
 c_all ^= c

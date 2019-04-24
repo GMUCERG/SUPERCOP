@@ -3,6 +3,7 @@
   AES-CTR
   Romain Dolbeau
   Public Domain
+  2018.02.23 djb: __m128i* for loadu
 */
 
 #include <stdio.h>
@@ -24,8 +25,8 @@
 #endif
 
 static inline void aesni_key256_expand(const unsigned char* key, __m128i rkeys[16]) {
-  __m128i key0 = _mm_loadu_si128((const unsigned int *)(key+0));
-  __m128i key1 = _mm_loadu_si128((const unsigned int *)(key+16));
+  __m128i key0 = _mm_loadu_si128((const __m128i *)(key+0));
+  __m128i key1 = _mm_loadu_si128((const __m128i *)(key+16));
   __m128i temp0, temp1, temp2, temp4;
   int idx = 0;
 

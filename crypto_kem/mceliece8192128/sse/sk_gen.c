@@ -1,3 +1,7 @@
+/*
+  This file is for secret-key generation
+*/
+
 #include "sk_gen.h"
 
 #include "randombytes.h"
@@ -6,9 +10,10 @@
 #include "util.h"
 #include "gf.h"
 
-#include <stdint.h>
-
-static int irr_gen(gf *out, gf *f)
+/* input: f, element in GF((2^m)^t) */
+/* output: out, minimal polynomial of f */
+/* return: 0 for success and -1 for failure */
+static int genpoly_gen(gf *out, gf *f)
 {
 	int i, j, k, c;
 
@@ -69,7 +74,35 @@ static int irr_gen(gf *out, gf *f)
 	return 0;
 }
 
-void sk_gen(unsigned char *sk)
+/* output: out, a random permuataion represented as a list of 32-bit integers */
+static void perm_gen(uint32_t *out)
+{
+	int i, rep;
+	uint64_t list[1 << GFBITS];
+
+	while (1)
+	{
+		randombytes((unsigned char *) out, sizeof(uint32_t) * (1 << GFBITS));
+
+		for (i = 0; i < (1 << GFBITS); i++)
+		{
+			list[i] = out[i];
+			list[i] <<= 31;
+		}
+        
+		sort_63b(1 << GFBITS, list);
+        
+		rep = 0;
+		for (i = 1; i < (1 << GFBITS); i++)
+			if ((list[i-1] >> 31) == (list[i] >> 31))
+				rep = 1;
+
+		if (rep == 0) break;
+	}
+}
+
+/* output: irr_out, an random monic irreducible polynomial of degree t */
+static void irr_gen(unsigned char *irr_out)
 {
 	int i;
 
@@ -82,14 +115,34 @@ void sk_gen(unsigned char *sk)
 
 		for (i = 0; i < SYS_T; i++) f[i] &= GFMASK;
 
-		if ( irr_gen(irr, f) == 0 ) break;
+		if ( genpoly_gen(irr, f) == 0 ) break;
 	}
 
 	for (i = 0; i < SYS_T; i++) 
-		store2( sk + SYS_N/8 + i*2, irr[i] );
+		store2( irr_out + i*2, irr[i] );
+}
+
+/* output: perm, a random permuataion represented as a list of 32-bit integers */
+/*         irr, an random monic irreducible polynomial of degree t */
+void sk_part_gen(unsigned char *irr, uint32_t * perm)
+{
+	irr_gen(irr);
+	perm_gen(perm);
+}
+
+/* input: perm, a random permuataion represented as a list of integers in {0, ..., n-1} */
+/*        irr, an random monic irreducible polynomial of degree t */
+/* output: sk, the corresponding secret key which contrains */
+/*             the random n-bit string, irr, and the controlbits for perm */
+void sk_gen(unsigned char *sk, unsigned char *irr, uint32_t * perm)
+{
+	int i;
+
+	for (i = 0; i < IRR_BYTES; i++)
+		sk[SYS_N/8 + i] = irr[i];
 
 	randombytes(sk, SYS_N/8);
 
-	controlbits(sk + SYS_N/8 + IRR_BYTES);
+	controlbits(sk + SYS_N/8 + IRR_BYTES, perm);
 }
 

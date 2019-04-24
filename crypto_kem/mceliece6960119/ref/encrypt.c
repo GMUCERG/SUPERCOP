@@ -1,3 +1,7 @@
+/*
+  This file is for Nieddereiter encryption
+*/
+
 #include "encrypt.h"
 
 #include "util.h"
@@ -11,6 +15,7 @@
 
 #include "gf.h"
 
+/* moving the indices in the right range to the beginning of the array */
 static int mov_forward(uint16_t *ind)
 {
 	int i, j, found;
@@ -37,6 +42,7 @@ static int mov_forward(uint16_t *ind)
 	return found;
 }
 
+/* output: e, an error vector of weight t */
 static void gen_e(unsigned char *e)
 {
 	int i, j, eq;
@@ -57,6 +63,8 @@ static void gen_e(unsigned char *e)
 		if (mov_forward(ind) == 0)
 			continue;
 	
+		// check for repetition
+
 		eq = 0;
 
 		for (i = 1; i < SYS_T; i++) for (j = 0; j < i; j++)
@@ -92,6 +100,8 @@ static void gen_e(unsigned char *e)
 		e[ j/8 ] = (e_int[i] >> j) & 0xFF;
 }
 
+/* input: public key pk, error vector e */
+/* output: syndrome s */
 void syndrome(unsigned char *s, const unsigned char *pk, unsigned char *e)
 {
 	unsigned char b, row[SYS_N/8];

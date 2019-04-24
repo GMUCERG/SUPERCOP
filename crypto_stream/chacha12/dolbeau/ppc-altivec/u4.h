@@ -30,7 +30,9 @@ Public domain.
   if (!bytes) return;
 if (bytes>=256) {
   u32 in12, in13;
+#ifndef _LITTLE_ENDIAN
   const vector unsigned char br = (const vector unsigned char){3,2,1,0,7,6,5,4,11,10,9,8,15,14,13,12};
+#endif
   vector unsigned int x_0 = vec_splats((const unsigned int)(x[0]));
   vector unsigned int x_1 = vec_splats((const unsigned int)(x[1]));
   vector unsigned int x_2 = vec_splats((const unsigned int)(x[2]));
@@ -136,6 +138,11 @@ if (bytes>=256) {
       VEC4_QUARTERROUND( 3, 4, 9,14);
     }
     
+#ifndef _LITTLE_ENDIAN
+#define REVB(X) vec_perm(X,X,br)
+#else
+#define REVB(X) X
+#endif
 #define ONEQUAD_TRANSPOSE(a,b,c,d)                                      \
     {                                                                   \
       vector unsigned int t0, t1, t2, t3;                               \
@@ -152,16 +159,16 @@ if (bytes>=256) {
       x_##c = vec_mergeh(t_##b, t_##d);                                 \
       x_##d = vec_mergel(t_##b, t_##d);                                 \
       t_##a = vec_ld(  0, (const unsigned int*)m);                      \
-      t0 = vec_xor(vec_perm(x_##a,x_##a,br),t_##a);                     \
+      t0 = vec_xor(REVB(x_##a),t_##a);                     \
       vec_st(t0,   0, (unsigned int *)out);                             \
       t_##b = vec_ld( 64, (const unsigned int*)m);                      \
-      t1 = vec_xor(vec_perm(x_##b,x_##b,br),t_##b);                     \
+      t1 = vec_xor(REVB(x_##b),t_##b);                     \
       vec_st(t1,  64, (unsigned int *)out);                             \
       t_##c = vec_ld(128, (const unsigned int*)m);                      \
-      t2 = vec_xor(vec_perm(x_##c,x_##c,br),t_##c);                     \
+      t2 = vec_xor(REVB(x_##c),t_##c);                     \
       vec_st(t2, 128, (unsigned int *)out);                             \
       t_##d = vec_ld(192, (const unsigned int*)m);                      \
-      t3 = vec_xor(vec_perm(x_##d,x_##d,br),t_##d);                     \
+      t3 = vec_xor(REVB(x_##d),t_##d);                     \
       vec_st(t3, 192, (unsigned int *)out);                             \
     }
     

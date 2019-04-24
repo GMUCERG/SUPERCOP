@@ -34,6 +34,12 @@
  */
 #elif defined(__sparc)          /* Newer Sparc's */
 #define ECRYPT_BIG_ENDIAN
+#elif defined(__powerpc64__)    /* PPC64 */
+#if defined(_LITTLE_ENDIAN) && _LITTLE_ENDIAN == 1
+#define ECRYPT_LITTLE_ENDIAN
+#else
+#define ECRYPT_BIG_ENDIAN
+#endif
 #elif defined(__powerpc__)      /* PowerPC */
 #define ECRYPT_BIG_ENDIAN
 #elif defined(__ppc__)          /* PowerPC */

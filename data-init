@@ -188,7 +188,7 @@ done
 
 
 cat OPERATIONS \
-| while read o macros prototypes
+| while read o
 do
   [ -d "$o" ] || continue
 
@@ -381,7 +381,7 @@ done
 
 
 cat OPERATIONS \
-| while read o macros prototypes
+| while read o
 do
   [ -d "$o" ] || continue
   for m in 1 2 3

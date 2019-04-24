@@ -1,3 +1,7 @@
+/*
+  This file is for loading/storing data in a little-endian fashion
+*/
+
 #include "util.h"
 
 #include "params.h"
@@ -23,9 +27,9 @@ void irr_load(vec128 * out, const unsigned char * in)
 {
 	int i, j;
 	uint64_t v0 = 0, v1 = 0;
-	uint16_t irr[ SYS_T ];	
+	uint16_t irr[ SYS_T ];
 
-	for (i = 0; i < SYS_T; i++) 
+	for (i = 0; i < SYS_T; i++)
 	{
 		irr[i] = load2(in + i*2);
 		irr[i] &= GFMASK;

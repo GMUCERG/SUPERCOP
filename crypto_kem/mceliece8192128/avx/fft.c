@@ -1,3 +1,6 @@
+/*
+  This file is for the Gao-Mateer FFT
+*/
 
 #include "fft.h"
 
@@ -6,27 +9,29 @@
 
 #include <stdint.h>
 
+/* input: in, polynomial in bitsliced form */
+/* output: in, result of applying the radix conversions on in */
 static void radix_conversions(vec128 *in)
 {
 	int i, j, k;
 	vec128 t;
 	uint64_t v0, v1;
 
-	const u128 mask[5][2] = 
+	const vec128 mask[5][2] = 
 	{
-		{{{0x8888888888888888, 0x8888888888888888}},
-		 {{0x4444444444444444, 0x4444444444444444}}},
-		{{{0xC0C0C0C0C0C0C0C0, 0xC0C0C0C0C0C0C0C0}},
-		 {{0x3030303030303030, 0x3030303030303030}}},
-		{{{0xF000F000F000F000, 0xF000F000F000F000}},
-		 {{0x0F000F000F000F00, 0x0F000F000F000F00}}},
-		{{{0xFF000000FF000000, 0xFF000000FF000000}},
-		 {{0x00FF000000FF0000, 0x00FF000000FF0000}}},
-		{{{0xFFFF000000000000, 0xFFFF000000000000}},
-		 {{0x0000FFFF00000000, 0x0000FFFF00000000}}}
+		{vec128_set2x(0x8888888888888888, 0x8888888888888888),
+		 vec128_set2x(0x4444444444444444, 0x4444444444444444)},
+		{vec128_set2x(0xC0C0C0C0C0C0C0C0, 0xC0C0C0C0C0C0C0C0),
+		 vec128_set2x(0x3030303030303030, 0x3030303030303030)},
+		{vec128_set2x(0xF000F000F000F000, 0xF000F000F000F000),
+		 vec128_set2x(0x0F000F000F000F00, 0x0F000F000F000F00)},
+		{vec128_set2x(0xFF000000FF000000, 0xFF000000FF000000),
+		 vec128_set2x(0x00FF000000FF0000, 0x00FF000000FF0000)},
+		{vec128_set2x(0xFFFF000000000000, 0xFFFF000000000000),
+		 vec128_set2x(0x0000FFFF00000000, 0x0000FFFF00000000)}
 	};
 
-	const u128 s[5][GFBITS] = 
+	vec128 s[5][GFBITS] = 
 	{
 #include "scalars13_2x.data"
 	};
@@ -47,20 +52,22 @@ static void radix_conversions(vec128 *in)
 		for (i = 0; i < GFBITS; i++)
 		for (k = 4; k >= j; k--)
 		{
-			t = vec128_and(in[i], mask[k][0].v);
+			t = vec128_and(in[i], mask[k][0]);
 			t = vec128_srl_2x(t, 1 << k);
 			in[i] = vec128_xor(in[i], t);
 
-			t = vec128_and(in[i], mask[k][1].v);
+			t = vec128_and(in[i], mask[k][1]);
 			t = vec128_srl_2x(t, 1 << k);
 			in[i] = vec128_xor(in[i], t);
 		}
 
 		if (j < 5)
-			vec128_mul(in, in, (vec128 *) s[j]); // scaling
+			vec128_mul(in, in, s[j]); // scaling
 	}
 }
 
+/* input: in, result of applying the radix conversions to the input polynomial */
+/* output: out, evaluation results (by applying the FFT butterflies) */
 static void butterflies(vec256 out[][ GFBITS ], vec128 *in)
 {
 	int i, j, k, s, b;
@@ -74,29 +81,29 @@ static void butterflies(vec256 out[][ GFBITS ], vec128 *in)
 
 	uint64_t v0, v1;
 
-	u256 consts128[ GFBITS ] =
+	vec256 consts128[ GFBITS ] =
 	{
-		{{{{0XA55A5AA55AA5A55A, 0XA55A5AA55AA5A55A}}, {{0XA55A5AA55AA5A55A, 0XA55A5AA55AA5A55A}}}},
-		{{{{0X6969696996969696, 0X6969696996969696}}, {{0X6969696996969696, 0X6969696996969696}}}},
-		{{{{0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A}}, {{0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A}}}},
-		{{{{0X9999999966666666, 0X6666666699999999}}, {{0X9999999966666666, 0X6666666699999999}}}},
-		{{{{0X3C3CC3C3C3C33C3C, 0XC3C33C3C3C3CC3C3}}, {{0X3C3CC3C3C3C33C3C, 0XC3C33C3C3C3CC3C3}}}},
-		{{{{0XFFFF0000FFFF0000, 0X0000FFFF0000FFFF}}, {{0XFFFF0000FFFF0000, 0X0000FFFF0000FFFF}}}},
-		{{{{0X0000000000000000, 0X0000000000000000}}, {{0X0000000000000000, 0X0000000000000000}}}},
-		{{{{0XCC33CC3333CC33CC, 0X33CC33CCCC33CC33}}, {{0XCC33CC3333CC33CC, 0X33CC33CCCC33CC33}}}},
-		{{{{0X0000000000000000, 0X0000000000000000}}, {{0X0000000000000000, 0X0000000000000000}}}},
-		{{{{0X3C3C3C3C3C3C3C3C, 0X3C3C3C3C3C3C3C3C}}, {{0X3C3C3C3C3C3C3C3C, 0X3C3C3C3C3C3C3C3C}}}},
-		{{{{0XAA5555AAAA5555AA, 0XAA5555AAAA5555AA}}, {{0XAA5555AAAA5555AA, 0XAA5555AAAA5555AA}}}},
-		{{{{0XC33C3CC33CC3C33C, 0XC33C3CC33CC3C33C}}, {{0XC33C3CC33CC3C33C, 0XC33C3CC33CC3C33C}}}},
-		{{{{0X00FFFF0000FFFF00, 0XFF0000FFFF0000FF}}, {{0X00FFFF0000FFFF00, 0XFF0000FFFF0000FF}}}}
+		vec256_set4x(0XA55A5AA55AA5A55A, 0XA55A5AA55AA5A55A, 0XA55A5AA55AA5A55A, 0XA55A5AA55AA5A55A),
+		vec256_set4x(0X6969696996969696, 0X6969696996969696, 0X6969696996969696, 0X6969696996969696),
+		vec256_set4x(0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A),
+		vec256_set4x(0X9999999966666666, 0X6666666699999999, 0X9999999966666666, 0X6666666699999999),
+		vec256_set4x(0X3C3CC3C3C3C33C3C, 0XC3C33C3C3C3CC3C3, 0X3C3CC3C3C3C33C3C, 0XC3C33C3C3C3CC3C3),
+		vec256_set4x(0XFFFF0000FFFF0000, 0X0000FFFF0000FFFF, 0XFFFF0000FFFF0000, 0X0000FFFF0000FFFF),
+		vec256_set4x(0X0000000000000000, 0X0000000000000000, 0X0000000000000000, 0X0000000000000000),
+		vec256_set4x(0XCC33CC3333CC33CC, 0X33CC33CCCC33CC33, 0XCC33CC3333CC33CC, 0X33CC33CCCC33CC33),
+		vec256_set4x(0X0000000000000000, 0X0000000000000000, 0X0000000000000000, 0X0000000000000000),
+		vec256_set4x(0X3C3C3C3C3C3C3C3C, 0X3C3C3C3C3C3C3C3C, 0X3C3C3C3C3C3C3C3C, 0X3C3C3C3C3C3C3C3C),
+		vec256_set4x(0XAA5555AAAA5555AA, 0XAA5555AAAA5555AA, 0XAA5555AAAA5555AA, 0XAA5555AAAA5555AA),
+		vec256_set4x(0XC33C3CC33CC3C33C, 0XC33C3CC33CC3C33C, 0XC33C3CC33CC3C33C, 0XC33C3CC33CC3C33C),
+		vec256_set4x(0X00FFFF0000FFFF00, 0XFF0000FFFF0000FF, 0X00FFFF0000FFFF00, 0XFF0000FFFF0000FF)
 	};
 
-	u256 consts[ 31 ][ GFBITS ] =
+	vec256 consts[ 31 ][ GFBITS ] =
 	{
 #include "consts13.data"
 	};
 
-	u256 powers[ 32 ][ GFBITS ] =
+	vec256 powers[ 32 ][ GFBITS ] =
 	{
 #include "powers13.data"
 	};
@@ -204,7 +211,7 @@ static void butterflies(vec256 out[][ GFBITS ], vec128 *in)
 		for (b = 0; b < GFBITS; b++) tmp0[b] = vec256_unpack_low (out[k][b], out[k+1][b]);
 		for (b = 0; b < GFBITS; b++) tmp1[b] = vec256_unpack_high (out[k][b], out[k+1][b]); 
 
-		vec256_maa_asm(tmp0, tmp1, (vec256 *) consts128);
+		vec256_maa_asm(tmp0, tmp1, consts128);
 
 		for (b = 0; b < GFBITS; b++) out[k][b] = vec256_unpack_low (tmp0[b], tmp1[b]);
 		for (b = 0; b < GFBITS; b++) out[k+1][b] = vec256_unpack_high (tmp0[b], tmp1[b]);
@@ -217,19 +224,21 @@ static void butterflies(vec256 out[][ GFBITS ], vec128 *in)
 		for (j = 0; j < 32; j += 2*s)
 		for (k = j; k < j+s; k++)
 		{
-			vec256_maa_asm(out[k], out[k+s], (vec256 *) consts[ consts_ptr + (k-j) ]);
+			vec256_maa_asm(out[k], out[k+s], consts[ consts_ptr + (k-j) ]);
 		}
 
 		consts_ptr += (1 << i);
 	}
 
-	//
+	// adding the part contributed by x^128
 
 	for (i = 0; i <     32; i++)
 	for (b = 0; b < GFBITS; b++) 
-		out[i][b] = vec256_xor(out[i][b], powers[i][b].v);
+		out[i][b] = vec256_xor(out[i][b], powers[i][b]);
 }
 
+/* input: in, polynomial in bitsliced form */
+/* output: out, bitsliced results of evaluating in all the field elements */
 void fft(vec256 out[][GFBITS], vec128 *in)
 {
 	radix_conversions(in);

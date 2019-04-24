@@ -229,7 +229,7 @@ do
         && cp bin/$keccaktarget/libkeccak.a.headers/* "$include/$abi/libkeccak.a.headers" \
         && cp bin/$keccaktarget/libkeccak.a "$lib/$abi/libkeccak.a" \
         && chmod 644 "$lib/$abi/libkeccak.a"
-      ) && break
+      ) && break || :
     done
   done
 done
@@ -259,7 +259,7 @@ done
 
 # loop over operations
 cat OPERATIONS \
-| while read o macros prototypes
+| while read o
 do
   [ -d "$o" ] || continue
   [ x"$focus" = x"all" -o x"$focus" = x"used" -o x"$focus" = x"$o" ] || continue
@@ -343,7 +343,7 @@ do
 
 	rm -rf "$work/compile"
 	mkdir -p "$work/compile"
-	cp -pr "$implementationdir"/* "$work/compile"
+	cp -Lpr "$implementationdir"/* "$work/compile"
   
 	cfiles=`ls "$work/compile" | grep '\.c$' || :`
 	sfiles=`ls "$work/compile" | grep '\.[sS]$' || :`
@@ -359,6 +359,9 @@ do
 	cp -p "try-anything.c" "$work/compile/try-anything.$language"
 	cp -p "measure-anything.c" "$work/compile/measure-anything.$language"
 
+        cp -p MACROS "$work/compile/MACROS"
+        cp -p PROTOTYPES.c "$work/compile/PROTOTYPES.c"
+
 	(
 	  cd "$work/compile"
 	  (
@@ -367,10 +370,11 @@ do
 	    echo ""
 	    echo "#include \"${op}.h\""
 	    echo ""
-	    echo "$macros" | tr : '\012' | while read macro
-	    do
-	      echo "#define ${o}${macro} ${op}${macro}"
-	    done
+            egrep "${o}"'$|'"${o}"'\(|'"${o}"'_' < MACROS \
+            | sed "s/$o/$op/" | while read mop
+            do
+              echo "#define ${mop} ${mop}" | sed "s/$op/$o/"
+            done
 	    echo "#define ${o}_PRIMITIVE \"${p}\""
 	    echo "#define ${o}_IMPLEMENTATION ${op}_IMPLEMENTATION"
 	    echo "#define ${o}_VERSION ${op}_VERSION"
@@ -386,18 +390,17 @@ do
 	    echo '#ifdef __cplusplus'
 	    echo 'extern "C" {'
 	    echo '#endif'
-	    echo "$prototypes" | tr : '\012' | while read prototype
-	    do
-	      echo "extern int ${opi}${prototype};"
-	    done
+            egrep "${o}"'$|'"${o}"'\(|'"${o}"'_' < PROTOTYPES.c \
+            | sed "s/$o/$opi/"
 	    echo '#ifdef __cplusplus'
 	    echo '}'
 	    echo '#endif'
 	    echo ""
-	    echo "$macros" | tr : '\012' | while read macro
-	    do
-	      echo "#define ${op}${macro} ${opi}${macro}"
-	    done
+            egrep "${o}"'$|'"${o}"'\(|'"${o}"'_' < MACROS \
+            | sed "s/$o/$opi/" | while read mopi
+            do
+              echo "#define ${mopi} ${mopi}" | sed "s/$opi/$op/"
+            done
 	    echo "#define ${op}_IMPLEMENTATION \"${implementationdir}\""
 	    echo "#ifndef ${opi}_VERSION"
 	    echo "#define ${opi}_VERSION \"-\""

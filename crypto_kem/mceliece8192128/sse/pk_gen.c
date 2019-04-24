@@ -1,45 +1,93 @@
+/*
+  This file is for public-key generation
+*/
+
 #include "pk_gen.h"
 
+#include "controlbits.h"
 #include "params.h"
-#include "vec128.h"
 #include "benes.h"
 #include "util.h"
 #include "fft.h"
-#include "gf.h"
 
 #include <stdint.h>
 
-typedef union
+static void de_bitslicing(uint64_t * out, const vec128 in[][GFBITS])
 {
-	vec128 d128[ GFBITS * SYS_T ][ 64 ];
-	uint64_t d64[ GFBITS * SYS_T ][ 128 ];
-} mat;
+	int i, j, r;
+	uint64_t u = 0;
 
-int pk_gen(unsigned char * pk, const unsigned char * sk)
+	for (i = 0; i < (1 << GFBITS); i++)
+		out[i] = 0 ;
+
+	for (i = 0; i < 64; i++)
+	{
+		for (j = GFBITS-1; j >= 0; j--)
+		{
+			u = vec128_extract(in[i][j], 0); 
+			for (r = 0; r < 64; r++) { out[i*128 + 0*64 + r] <<= 1; out[i*128 + 0*64 + r] |= (u >> r) & 1;}
+			u = vec128_extract(in[i][j], 1);
+			for (r = 0; r < 64; r++) { out[i*128 + 1*64 + r] <<= 1; out[i*128 + 1*64 + r] |= (u >> r) & 1;}
+		}
+	}
+}
+
+static void to_bitslicing_2x(vec128 out0[][GFBITS], vec128 out1[][GFBITS], const uint64_t * in)
+{
+	int i, j, k, r;
+	uint64_t u[2];
+
+	for (i = 0; i < 64; i++)
+	{
+		for (j = GFBITS-1; j >= 0; j--)
+		{
+			for (k = 0; k < 2; k++)
+			for (r = 63; r >= 0; r--)
+			{
+				u[k] <<= 1;
+				u[k] |= (in[i*128 + k*64 + r] >> (j + GFBITS)) & 1;
+			}
+        
+			out1[i][j] = vec128_set2x(u[0], u[1]);
+		}
+        
+		for (j = GFBITS-1; j >= 0; j--)
+		{
+			for (k = 0; k < 2; k++)
+			for (r = 63; r >= 0; r--)
+			{
+				u[k] <<= 1;
+				u[k] |= (in[i*128 + k*64 + r] >> j) & 1;
+			}
+        
+			out0[i][GFBITS-1-j] = vec128_set2x(u[0], u[1]);
+		}
+	}
+}
+
+int pk_gen(unsigned char * pk, const unsigned char * irr, uint32_t * perm)
 {
 	int i, j, k;
-	int row, c;
-
-	mat m;
-	vec128 (* mat128)[64] = m.d128;
-	uint64_t (* mat)[128] = m.d64;
+	int row, c, d;
+	
+	uint64_t mat[ GFBITS * SYS_T ][ 128 ];
+	uint64_t ops[ GFBITS * SYS_T ][ GFBITS * SYS_T / 64 ];
 
 	uint64_t mask;	
 
 	vec128 irr_int[ GFBITS ];
 
-	u128 consts[64][ GFBITS ] = 
-	{
-#include "points13.data"
-	};
-
+	vec128 consts[ 64 ][ GFBITS ];
 	vec128 eval[ 64 ][ GFBITS ];
 	vec128 prod[ 64 ][ GFBITS ];
 	vec128 tmp[ GFBITS ];
 
+	uint64_t list[1 << GFBITS];
+	uint64_t one_row[ (SYS_N - GFBITS*SYS_T)/64 ];
+
 	// compute the inverses 
 
-	irr_load(irr_int, sk);
+	irr_load(irr_int, irr);
 
 	fft(eval, irr_int);
 
@@ -60,29 +108,60 @@ int pk_gen(unsigned char * pk, const unsigned char * sk)
 
 	// fill matrix 
 
-	for (j = 0; j < 64; j++)
+	de_bitslicing(list, prod);
+
+	for (i = 0; i < (1 << GFBITS); i++)
+	{	
+		list[i] <<= GFBITS;
+		list[i] |= i;	
+		list[i] |= ((uint64_t) perm[i]) << 31;
+	}
+
+	sort_63b(1 << GFBITS, list);
+
+	to_bitslicing_2x(consts, prod, list);
+
+	for (i = 0; i < (1 << GFBITS); i++)
+		perm[i] = list[i] & GFMASK;
+
+	for (j = 0; j < (GFBITS * SYS_T + 127)/128; j++)
+	for (k = 0; k < GFBITS; k++)
 	{
-		for (k = 0; k < GFBITS; k++)
-			mat128[ k ][ j ] = prod[ j ][ k ];
+		mat[ k ][ 2*j + 0 ] = vec128_extract(prod[ j ][ k ], 0);
+		mat[ k ][ 2*j + 1 ] = vec128_extract(prod[ j ][ k ], 1);
 	}
 
 	for (i = 1; i < SYS_T; i++)
+	for (j = 0; j < (GFBITS * SYS_T + 127)/128; j++)
 	{
-		for (j = 0; j < 64; j++)
-		{
-			vec128_mul(prod[j], prod[j], (vec128 *) consts[j]);
+		vec128_mul(prod[j], prod[j], consts[j]);
 
-			for (k = 0; k < GFBITS; k++)
-				mat128[ i*GFBITS + k ][ j ] = prod[ j ][ k ];
+		for (k = 0; k < GFBITS; k++)
+		{
+			mat[ i*GFBITS + k ][ 2*j + 0 ] = vec128_extract(prod[ j ][ k ], 0);
+			mat[ i*GFBITS + k ][ 2*j + 1 ] = vec128_extract(prod[ j ][ k ], 1);
 		}
 	}
 
-	// permute
+	// gaussian elimination to obtain an upper triangular matrix 
+	// and keep track of the operations in ops
 
-	for (i = 0; i < GFBITS * SYS_T; i++)
-		benes((vec128 *) mat[ i ], sk + IRR_BYTES, 0);
+	for (i = 0; i < (GFBITS * SYS_T) / 64; i++)
+	for (j = 0; j < 64; j++)
+	{
+		row = i*64 + j;			
+		for (c = 0; c < (GFBITS * SYS_T) / 64; c++)
+			ops[ row ][ c ] = 0;
+	}
 
-	// gaussian elimination 
+	for (i = 0; i < (GFBITS * SYS_T) / 64; i++)
+	for (j = 0; j < 64; j++)
+	{
+		row = i*64 + j;			
+
+		ops[ row ][ i ] = 1;
+		ops[ row ][ i ] <<= j;
+	}
 
 	for (i = 0; i < (GFBITS * SYS_T) / 64; i++)
 	for (j = 0; j < 64; j++)
@@ -95,8 +174,11 @@ int pk_gen(unsigned char * pk, const unsigned char * sk)
 			mask &= 1;
 			mask -= 1;
 
-			for (c = i; c < 128; c++)
+			for (c = 0; c < (GFBITS * SYS_T) / 64; c++)
+			{
 				mat[ row ][ c ] ^= mat[ k ][ c ] & mask;
+				ops[ row ][ c ] ^= ops[ k ][ c ] & mask;
+			}
 		}
 
 		if ( ((mat[ row ][ i ] >> j) & 1) == 0 ) // return if not systematic
@@ -104,31 +186,88 @@ int pk_gen(unsigned char * pk, const unsigned char * sk)
 			return -1;
 		}
 
-		for (k = 0; k < GFBITS * SYS_T; k++)
+		for (k = row+1; k < GFBITS * SYS_T; k++)
 		{
-			if (k != row)
+			mask = mat[ k ][ i ] >> j;
+			mask &= 1;
+			mask = -mask;
+
+			for (c = 0; c < (GFBITS * SYS_T) / 64; c++)
+			{
+				mat[ k ][ c ] ^= mat[ row ][ c ] & mask;
+				ops[ k ][ c ] ^= ops[ row ][ c ] & mask;
+			}
+		}
+	}
+
+	// computing the lineaer map required to obatin the systematic form
+
+	for (i = (GFBITS * SYS_T) / 64 - 1; i >= 0; i--)
+	for (j = 63; j >= 0; j--)
+	{
+		row = i*64 + j;			
+
+		for (k = 0; k < row; k++)
+		{
 			{
 				mask = mat[ k ][ i ] >> j;
 				mask &= 1;
 				mask = -mask;
 
-				for (c = i; c < 128; c++)
-					mat[ k ][ c ] ^= mat[ row ][ c ] & mask;
+				for (c = 0; c < (GFBITS * SYS_T) / 64; c++)
+					ops[ k ][ c ] ^= ops[ row ][ c ] & mask;
 			}
 		}
 	}
 
-	// store pk
+	// apply the linear map to the non-systematic part
 
-	for (i = 0; i < GFBITS * SYS_T; i++)
+	for (j = (GFBITS * SYS_T + 127)/128; j < 64; j++)
+	for (k = 0; k < GFBITS; k++)
 	{
-		for (j = (GFBITS * SYS_T) / 64; j < 128; j++)
-		{
-			store8(pk, mat[i][j]);
+		mat[ k ][ 2*j + 0 ] = vec128_extract(prod[ j ][ k ], 0);
+		mat[ k ][ 2*j + 1 ] = vec128_extract(prod[ j ][ k ], 1);
+	}
 
+	for (i = 1; i < SYS_T; i++)
+	for (j = (GFBITS * SYS_T + 127)/128; j < 64; j++)
+	{
+		vec128_mul(prod[j], prod[j], consts[j]);
+
+		for (k = 0; k < GFBITS; k++)
+		{
+			mat[ i*GFBITS + k ][ 2*j + 0 ] = vec128_extract(prod[ j ][ k ], 0);
+			mat[ i*GFBITS + k ][ 2*j + 1 ] = vec128_extract(prod[ j ][ k ], 1);	
+		}
+	}
+
+	for (i = 0; i < (GFBITS * SYS_T) / 64; i++)
+	for (j = 0; j < 64; j++)
+	{
+		row = i*64 + j;			
+
+		for (k = 0; k < (SYS_N - GFBITS*SYS_T)/64; k++)
+			one_row[ k ] = 0;
+
+		for (c = 0; c < (GFBITS * SYS_T) / 64; c++)
+		for (d = 0; d < 64; d++)
+		{
+			mask = ops[ row ][ c ] >> d;
+			mask &= 1;
+			mask = -mask;
+
+			for (k = 0; k < (SYS_N - GFBITS*SYS_T)/64; k++)
+				one_row[ k ] ^= mat[ c*64 + d ][ k + (GFBITS*SYS_T)/64 ] & mask;
+		}
+
+		for (k = 0; k < (SYS_N - GFBITS*SYS_T)/64; k++)
+		{
+			store8(pk, one_row[ k ]);
 			pk += 8;		
 		}
 	}
+
+	//
 
 	return 0;
 }

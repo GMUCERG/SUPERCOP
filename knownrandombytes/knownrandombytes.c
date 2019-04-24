@@ -4,7 +4,7 @@
 
 static unsigned char g[crypto_rng_KEYBYTES];
 static unsigned char r[crypto_rng_OUTPUTBYTES];
-unsigned long long pos = crypto_rng_OUTPUTBYTES;
+static unsigned long long pos = crypto_rng_OUTPUTBYTES;
 
 void randombytes(unsigned char *x,unsigned long long xlen)
 {

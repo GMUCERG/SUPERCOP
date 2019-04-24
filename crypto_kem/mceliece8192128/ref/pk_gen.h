@@ -1,3 +1,7 @@
+/*
+  This file is for public-key generation
+*/
+
 #ifndef PK_GEN_H
 #define PK_GEN_H
 

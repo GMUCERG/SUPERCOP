@@ -1,3 +1,6 @@
+/*
+  This file is for the Gao-Mateer FFT
+*/
 
 #include "fft.h"
 
@@ -6,27 +9,29 @@
 
 #include <stdint.h>
 
+/* input: in, polynomial in bitsliced form */
+/* output: in, result of applying the radix conversions on in */
 static void radix_conversions(vec128 *in)
 {
 	int i, j, k;
 	vec128 t;
 	uint64_t v0, v1;
 
-	const u128 mask[5][2] = 
+	const vec128 mask[5][2] = 
 	{
-		{{{0x8888888888888888, 0x8888888888888888}},
-		 {{0x4444444444444444, 0x4444444444444444}}},
-		{{{0xC0C0C0C0C0C0C0C0, 0xC0C0C0C0C0C0C0C0}},
-		 {{0x3030303030303030, 0x3030303030303030}}},
-		{{{0xF000F000F000F000, 0xF000F000F000F000}},
-		 {{0x0F000F000F000F00, 0x0F000F000F000F00}}},
-		{{{0xFF000000FF000000, 0xFF000000FF000000}},
-		 {{0x00FF000000FF0000, 0x00FF000000FF0000}}},
-		{{{0xFFFF000000000000, 0xFFFF000000000000}},
-		 {{0x0000FFFF00000000, 0x0000FFFF00000000}}}
+		{vec128_set2x(0x8888888888888888, 0x8888888888888888),
+		 vec128_set2x(0x4444444444444444, 0x4444444444444444)},
+		{vec128_set2x(0xC0C0C0C0C0C0C0C0, 0xC0C0C0C0C0C0C0C0),
+		 vec128_set2x(0x3030303030303030, 0x3030303030303030)},
+		{vec128_set2x(0xF000F000F000F000, 0xF000F000F000F000),
+		 vec128_set2x(0x0F000F000F000F00, 0x0F000F000F000F00)},
+		{vec128_set2x(0xFF000000FF000000, 0xFF000000FF000000),
+		 vec128_set2x(0x00FF000000FF0000, 0x00FF000000FF0000)},
+		{vec128_set2x(0xFFFF000000000000, 0xFFFF000000000000),
+		 vec128_set2x(0x0000FFFF00000000, 0x0000FFFF00000000)}
 	};
 
-	const u128 s[5][GFBITS] = 
+	vec128 s[5][GFBITS] = 
 	{
 #include "scalars13_2x.data"
 	};
@@ -47,20 +52,22 @@ static void radix_conversions(vec128 *in)
 		for (i = 0; i < GFBITS; i++)
 		for (k = 4; k >= j; k--)
 		{
-			t = vec128_and(in[i], mask[k][0].v);
+			t = vec128_and(in[i], mask[k][0]);
 			t = vec128_srl_2x(t, 1 << k);
 			in[i] = vec128_xor(in[i], t);
 
-			t = vec128_and(in[i], mask[k][1].v);
+			t = vec128_and(in[i], mask[k][1]);
 			t = vec128_srl_2x(t, 1 << k);
 			in[i] = vec128_xor(in[i], t);
 		}
 
 		if (j < 5)
-			vec128_mul(in, in, (vec128 *) s[j]);
+			vec128_mul(in, in, s[j]);
 	}
 }
 
+/* input: in, result of applying the radix conversions to the input polynomial */
+/* output: out, evaluation results (by applying the FFT butterflies) */
 static void butterflies(vec128 out[][ GFBITS ], vec128 *in)
 {
 	int i, j, k, s, b;
@@ -73,12 +80,12 @@ static void butterflies(vec128 out[][ GFBITS ], vec128 *in)
 	uint64_t v0, v1;
 	uint64_t consts_ptr = 0;
 
-	u128 consts[ 63 ][ GFBITS ] =
+	vec128 consts[ 63 ][ GFBITS ] =
 	{
 #include "consts13.data"
 	};
 
-	u128 powers[ 64 ][ GFBITS ] =
+	vec128 powers[ 64 ][ GFBITS ] =
 	{
 #include "powers13.data"
 	};
@@ -186,13 +193,15 @@ static void butterflies(vec128 out[][ GFBITS ], vec128 *in)
 		consts_ptr += (1 << i);
 	}
 
-	//
+	// adding the part contributed by x^128
 
 	for (i = 0; i < 64; i++)
 	for (b = 0; b < GFBITS; b++) 
-		out[i][b] = vec128_xor(out[i][b], powers[i][b].v);
+		out[i][b] = vec128_xor(out[i][b], powers[i][b]);
 }
 
+/* input: in, polynomial in bitsliced form */
+/* output: out, bitsliced results of evaluating in all the field elements */
 void fft(vec128 out[][GFBITS], vec128 *in)
 {
 	radix_conversions(in);

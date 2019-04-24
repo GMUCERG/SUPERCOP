@@ -1,3 +1,8 @@
+/*
+  This file is for transpose of the Gao-Mateer FFT
+  Functions with names ending with _tr are the transpose of the corresponding functions in fft.c
+*/
+
 #include "fft_tr.h"
 
 #include "transpose.h"
@@ -11,23 +16,23 @@ static void radix_conversions_tr(vec128 in[][ GFBITS ])
 
 	uint64_t v0, v1, v2, v3;
 
-	const u128 mask[6][2] = 
+	const vec128 mask[6][2] = 
 	{
-		{{{0x2222222222222222, 0x2222222222222222}},
-		 {{0x4444444444444444, 0x4444444444444444}}},
-		{{{0x0C0C0C0C0C0C0C0C, 0x0C0C0C0C0C0C0C0C}},
-		 {{0x3030303030303030, 0x3030303030303030}}},
-		{{{0x00F000F000F000F0, 0x00F000F000F000F0}},
-		 {{0x0F000F000F000F00, 0x0F000F000F000F00}}},
-		{{{0x0000FF000000FF00, 0x0000FF000000FF00}},
-		 {{0x00FF000000FF0000, 0x00FF000000FF0000}}},
-		{{{0x00000000FFFF0000, 0x00000000FFFF0000}},
-		 {{0x0000FFFF00000000, 0x0000FFFF00000000}}},
-		{{{0xFFFFFFFF00000000, 0xFFFFFFFF00000000}},
-		 {{0x00000000FFFFFFFF, 0x00000000FFFFFFFF}}}
+		{vec128_set2x(0x2222222222222222, 0x2222222222222222),
+		 vec128_set2x(0x4444444444444444, 0x4444444444444444)},
+		{vec128_set2x(0x0C0C0C0C0C0C0C0C, 0x0C0C0C0C0C0C0C0C),
+		 vec128_set2x(0x3030303030303030, 0x3030303030303030)},
+		{vec128_set2x(0x00F000F000F000F0, 0x00F000F000F000F0),
+		 vec128_set2x(0x0F000F000F000F00, 0x0F000F000F000F00)},
+		{vec128_set2x(0x0000FF000000FF00, 0x0000FF000000FF00),
+		 vec128_set2x(0x00FF000000FF0000, 0x00FF000000FF0000)},
+		{vec128_set2x(0x00000000FFFF0000, 0x00000000FFFF0000),
+		 vec128_set2x(0x0000FFFF00000000, 0x0000FFFF00000000)},
+		{vec128_set2x(0xFFFFFFFF00000000, 0xFFFFFFFF00000000),
+		 vec128_set2x(0x00000000FFFFFFFF, 0x00000000FFFFFFFF)}
 	};
 
-	const u128 s[6][2][GFBITS] = 
+	vec128 s[6][2][GFBITS] = 
 	{
 #include "scalars13_4x.data"
 	};
@@ -38,26 +43,26 @@ static void radix_conversions_tr(vec128 in[][ GFBITS ])
 	{
 		if (j < 6)
 		{
-			vec128_mul(in[0], in[0], (vec128 *) s[j][0]); // scaling
-			vec128_mul(in[1], in[1], (vec128 *) s[j][1]); // scaling
+			vec128_mul(in[0], in[0], s[j][0]); // scaling
+			vec128_mul(in[1], in[1], s[j][1]); // scaling
 		}
 
 		for (k = j; k <= 4; k++)
 		for (i = 0; i < GFBITS; i++)
 		{
-			t = vec128_and(in[0][i], mask[k][0].v);
+			t = vec128_and(in[0][i], mask[k][0]);
 			t = vec128_sll_2x(t, 1 << k);
 			in[0][i] = vec128_xor(in[0][i], t);
 
-			t = vec128_and(in[0][i], mask[k][1].v);
+			t = vec128_and(in[0][i], mask[k][1]);
 			t = vec128_sll_2x(t, 1 << k);
 			in[0][i] = vec128_xor(in[0][i], t);
 
-			t = vec128_and(in[1][i], mask[k][0].v);
+			t = vec128_and(in[1][i], mask[k][0]);
 			t = vec128_sll_2x(t, 1 << k);
 			in[1][i] = vec128_xor(in[1][i], t);
 
-			t = vec128_and(in[1][i], mask[k][1].v);
+			t = vec128_and(in[1][i], mask[k][1]);
 			t = vec128_sll_2x(t, 1 << k);
 			in[1][i] = vec128_xor(in[1][i], t);
 		}
@@ -102,24 +107,24 @@ static void butterflies_tr(vec128 out[][ GFBITS ], vec128 in[][ GFBITS ])
 	vec128 pre[ 6  ][ GFBITS ];
 	vec128 buf[ 64 ];
 
-	u128 consts64[ GFBITS ] =
+	vec128 consts64[ GFBITS ] =
 	{
-		{{0X6969969669699696, 0X6969969669699696}},
-		{{0X9966669966999966, 0X9966669966999966}},
-		{{0X9966669966999966, 0X9966669966999966}},
-		{{0XFF0000FF00FFFF00, 0XFF0000FF00FFFF00}},
-		{{0XCC3333CCCC3333CC, 0XCC3333CCCC3333CC}},
-		{{0X9966669966999966, 0X9966669966999966}},
-		{{0X6666666666666666, 0X6666666666666666}},
-		{{0XA55AA55AA55AA55A, 0XA55AA55AA55AA55A}},
-		{{0XCCCC33333333CCCC, 0XCCCC33333333CCCC}},
-		{{0X5A5A5A5A5A5A5A5A, 0X5A5A5A5A5A5A5A5A}},
-		{{0X55AAAA55AA5555AA, 0X55AAAA55AA5555AA}},
-		{{0X0FF0F00FF00F0FF0, 0X0FF0F00FF00F0FF0}},
-		{{0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A}}
+		vec128_set2x(0X6969969669699696, 0X6969969669699696),
+		vec128_set2x(0X9966669966999966, 0X9966669966999966),
+		vec128_set2x(0X9966669966999966, 0X9966669966999966),
+		vec128_set2x(0XFF0000FF00FFFF00, 0XFF0000FF00FFFF00),
+		vec128_set2x(0XCC3333CCCC3333CC, 0XCC3333CCCC3333CC),
+		vec128_set2x(0X9966669966999966, 0X9966669966999966),
+		vec128_set2x(0X6666666666666666, 0X6666666666666666),
+		vec128_set2x(0XA55AA55AA55AA55A, 0XA55AA55AA55AA55A),
+		vec128_set2x(0XCCCC33333333CCCC, 0XCCCC33333333CCCC),
+		vec128_set2x(0X5A5A5A5A5A5A5A5A, 0X5A5A5A5A5A5A5A5A),
+		vec128_set2x(0X55AAAA55AA5555AA, 0X55AAAA55AA5555AA),
+		vec128_set2x(0X0FF0F00FF00F0FF0, 0X0FF0F00FF00F0FF0),
+		vec128_set2x(0X5AA55AA5A55AA55A, 0X5AA55AA5A55AA55A)
 	};
 
-	u128 consts[ 63 ][ GFBITS ] =
+	vec128 consts[ 63 ][ GFBITS ] =
 	{
 #include "consts13.data"
 	};
@@ -153,7 +158,7 @@ static void butterflies_tr(vec128 out[][ GFBITS ], vec128 in[][ GFBITS ])
 			for (b = 0; b < GFBITS; b++) 
 				in[k][b] = vec128_xor(in[k][b], in[k+s][b]);
 
-			vec128_mul(tmp, in[k], (vec128 *) consts[ consts_ptr + (k-j) ]);
+			vec128_mul(tmp, in[k], consts[ consts_ptr + (k-j) ]);
 
 			for (b = 0; b < GFBITS; b++) 
 				in[k+s][b] = vec128_xor(in[k+s][b], tmp[b]);
@@ -171,7 +176,7 @@ static void butterflies_tr(vec128 out[][ GFBITS ], vec128 in[][ GFBITS ])
 		for (b = 0; b < GFBITS; b++) 
 			tmp0[b] = vec128_xor(tmp0[b], tmp1[b]);
 
-		vec128_mul(tmp, tmp0, (vec128 *) consts64);
+		vec128_mul(tmp, tmp0, consts64);
 
 		for (b = 0; b < GFBITS; b++) 
 			tmp1[b] = vec128_xor(tmp1[b], tmp[b]);

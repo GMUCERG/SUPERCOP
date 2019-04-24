@@ -12,8 +12,6 @@
 #include "crypto_aead.h"
 #include "stdaes-common.h"
 
-#include <openssl/evp.h>
-
 #define ACCBY8
 
 #define AES_USE_ASM

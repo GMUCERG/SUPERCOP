@@ -11,8 +11,6 @@
 #include <immintrin.h>
 #include "crypto_aead.h"
 
-#include <openssl/evp.h>
-
 #define ACCBY8
 
 #ifdef __INTEL_COMPILER

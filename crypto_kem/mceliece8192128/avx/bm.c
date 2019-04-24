@@ -1,3 +1,7 @@
+/*
+  This file is for the Berlekamp-Massey algorithm
+*/
+
 #include "bm.h"
 
 #include "gf.h"
@@ -65,6 +69,8 @@ static inline void interleave(vec256 *in, int idx0, int idx1, vec256 *mask, int 
 	in[idx1] = y;
 }
 
+/* input: in, field elements in bitsliced form */
+/* output: out, field elements in non-bitsliced form */
 static inline void get_coefs(gf *out, vec256 *in)
 {
 	int i, j, k;
@@ -126,6 +132,8 @@ static inline void get_coefs(gf *out, vec256 *in)
 		out[ (4*j + k)*16 + i ] = (vec256_extract(buf[i], j) >> (k*16)) & GFMASK;
 }
 
+/* input: in, sequence of field elements */
+/* output: out, minimal polynomial of in */
 void bm(vec128 *out, vec256 *in)
 {
 	int i;
@@ -143,7 +151,7 @@ void bm(vec128 *out, vec256 *in)
 	gf d, b, c0 = 1;
 	gf coefs[256];
 
-	// init
+	// initialization
 
 	get_coefs(coefs, in);
 

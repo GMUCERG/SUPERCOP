@@ -1,3 +1,7 @@
+/*
+  This file is for loading/storing data in a little-endian fashion
+*/
+
 #include "util.h"
 
 #include "params.h"

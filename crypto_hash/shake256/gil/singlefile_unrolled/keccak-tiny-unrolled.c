@@ -169,5 +169,5 @@ defsha3(512) */
 #include "crypto_hash.h"
 
 int crypto_hash(unsigned char *out, const unsigned char* in, unsigned long long inlen) {
-  return hash(out, 64, in, inlen, 136, 0x1f);
+  return hash(out, crypto_hash_BYTES, in, inlen, 136, 0x1f);
 }

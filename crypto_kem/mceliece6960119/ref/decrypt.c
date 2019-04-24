@@ -1,3 +1,7 @@
+/*
+  This file is for Nieddereiter decryption
+*/
+
 #include <stdio.h>
 #include "decrypt.h"
 
@@ -9,6 +13,11 @@
 #include "gf.h"
 #include "bm.h"
 
+/* Nieddereiter decryption with the Berlekamp decoder */
+/* intput: sk, secret key */
+/*         c, ciphertext */
+/* output: e, error vector */
+/* return: 0 for success; 1 for failure */
 int decrypt(unsigned char *e, const unsigned char *sk, const unsigned char *c)
 {
 	int i, w = 0; 
@@ -29,6 +38,7 @@ int decrypt(unsigned char *e, const unsigned char *sk, const unsigned char *c)
 	//
 
 	for (i = 0; i < SYND_BYTES; i++)       r[i] = c[i];
+	r[i-1] &= (1 << ((GFBITS * SYS_T) % 8)) - 1;
 	for (i = SYND_BYTES; i < SYS_N/8; i++) r[i] = 0;
 
 	for (i = 0; i < SYS_T; i++) { g[i] = load2(sk); g[i] &= GFMASK; sk += 2; } g[ SYS_T ] = 1;

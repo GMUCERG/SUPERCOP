@@ -98,8 +98,8 @@ do
 
       if [ "$t1" = integrate ]
       then
-        grep "^$t2 " OPERATIONS \
-        | while read o macros prototypes
+        grep "^$t2$" OPERATIONS \
+        | while read o
         do
           p=$t3
           [ -f "$o/$p/used" ] \
@@ -372,8 +372,8 @@ do
   
     if [ "$t1" = try ]
     then
-      grep "^$t4 " OPERATIONS \
-      | while read o macros prototypes
+      grep "^$t4$" OPERATIONS \
+      | while read o
       do
         rm -rf "$top/$target/CYCLES"
         rm -rf "$top/$target/errors"
@@ -431,7 +431,7 @@ do
 	fi
   
         mkdir -p "$top/$target/work"
-        cp -pr "$implementationdir"/* "$top/$target/work"
+        cp -Lpr "$implementationdir"/* "$top/$target/work"
   
         cfiles=`ls "$top/$target/work" | grep '\.c$' || :`
         sfiles=`ls "$top/$target/work" | grep '\.[sS]$' || :`
@@ -443,6 +443,9 @@ do
         cp -p "try-anything.c" "$top/$target/work/try-anything.$language"
         cp -p "measure-anything.c" "$top/$target/work/measure-anything.$language"
 
+        cp -p MACROS "$top/$target/work/MACROS"
+        cp -p PROTOTYPES.c "$top/$target/work/PROTOTYPES.c"
+
         (
           cd "$top/$target/work"
           (
@@ -451,9 +454,10 @@ do
             echo ""
             echo "#include \"${op}.h\""
             echo ""
-            echo "$macros" | tr : '\012' | while read macro
+            egrep "${o}"'$|'"${o}"'\(|'"${o}"'_' < MACROS \
+            | sed "s/$o/$op/" | while read mop
             do
-              echo "#define ${o}${macro} ${op}${macro}"
+              echo "#define ${mop} ${mop}" | sed "s/$op/$o/"
             done
             echo "#define ${o}_PRIMITIVE \"${p}\""
             echo "#define ${o}_IMPLEMENTATION ${op}_IMPLEMENTATION"
@@ -470,17 +474,16 @@ do
             echo '#ifdef __cplusplus'
             echo 'extern "C" {'
             echo '#endif'
-            echo "$prototypes" | tr : '\012' | while read prototype
-            do
-              echo "extern int ${opi}${prototype};"
-            done
+            egrep "${o}"'$|'"${o}"'\(|'"${o}"'_' < PROTOTYPES.c \
+            | sed "s/$o/$opi/"
             echo '#ifdef __cplusplus'
             echo '}'
             echo '#endif'
             echo ""
-            echo "$macros" | tr : '\012' | while read macro
+            egrep "${o}"'$|'"${o}"'\(|'"${o}"'_' < MACROS \
+            | sed "s/$o/$opi/" | while read mopi
             do
-              echo "#define ${op}${macro} ${opi}${macro}"
+              echo "#define ${mopi} ${mopi}" | sed "s/$opi/$op/"
             done
             echo "#define ${op}_IMPLEMENTATION \"${implementationdir}\""
             echo "#ifndef ${opi}_VERSION"
@@ -666,8 +669,8 @@ do
 
     if [ "$t1" = integrate ]
     then
-      grep "^$t2 " OPERATIONS \
-      | while read o macros prototypes
+      grep "^$t2$" OPERATIONS \
+      | while read o
       do
         p=$t3
         op="${o}_${p}"
@@ -698,8 +701,8 @@ do
 
     if [ "$t1" = measure1 -o "$t1" = measure2 -o "$t1" = measure3 ]
     then
-      grep "^$t2 " OPERATIONS \
-      | while read o macros prototypes
+      grep "^$t2$" OPERATIONS \
+      | while read o
       do
         p=$t3
         op="${o}_${p}"

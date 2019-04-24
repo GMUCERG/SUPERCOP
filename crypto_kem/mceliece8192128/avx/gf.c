@@ -1,9 +1,14 @@
+/*
+  this file is for functions for field arithmetic
+*/
+
 #include "gf.h"
 
 #include "params.h"
 
 #include <stdio.h>
 
+/* field multiplication */
 gf gf_mul(gf in0, gf in1)
 {
 	int i;
@@ -32,6 +37,7 @@ gf gf_mul(gf in0, gf in1)
 	return tmp & GFMASK;
 }
 
+/* 2 field multiplications */
 uint64_t gf_mul2(gf a, gf b0, gf b1)
 {
 	int i;
@@ -63,6 +69,7 @@ uint64_t gf_mul2(gf a, gf b0, gf b1)
 	return tmp & 0x00001FFF00001FFF;
 }
 
+/* 2 field squarings */
 static inline gf gf_sq2(gf in)
 {
 	int i;
@@ -94,6 +101,7 @@ static inline gf gf_sq2(gf in)
 	return x & GFMASK;
 }
 
+/* square and multiply */
 static inline gf gf_sqmul(gf in, gf m)
 {
 	int i;
@@ -130,6 +138,7 @@ static inline gf gf_sqmul(gf in, gf m)
 	return x & GFMASK;
 }
 
+/* square twice and multiply */
 static inline gf gf_sq2mul(gf in, gf m)
 {
 	int i;
@@ -169,6 +178,7 @@ static inline gf gf_sq2mul(gf in, gf m)
 	return x & GFMASK;
 }
 
+/* return num/den */
 gf gf_frac(gf den, gf num)
 {
 	gf tmp_11;
@@ -185,22 +195,13 @@ gf gf_frac(gf den, gf num)
 	return gf_sqmul(out, num); // 1111111111110
 }
 
+/* return 1/den */
 gf gf_inv(gf den)
 {
 	return gf_frac(den, ((gf) 1));
 }
 
-void gf_dump(gf a)
-{
-	int i;
-
-	printf("(");
-	printf("%d", a & 1);
-	for (i = 1; i < GFBITS; i++)
-		printf(" + %d * a^%d", (a >> i) & 1, i);
-	printf(")");
-}
-
+/* check if a == 0 */
 gf gf_iszero(gf a)
 {
 	uint32_t t = a;
@@ -211,6 +212,7 @@ gf gf_iszero(gf a)
 	return (gf) t;
 }
 
+/* multiplication in GF((2^m)^t) */
 void GF_mul(gf *out, gf *in0, gf *in1)
 {
 	int i, j;
@@ -235,22 +237,5 @@ void GF_mul(gf *out, gf *in0, gf *in1)
 
 	for (i = 0; i < 128; i++)
 		out[i] = prod[i];
-}
-
-void GF_dump(gf *p)
-{
-	int i;
-
-	printf("(");
-	gf_dump(p[0]);
-
-	for (i = 1; i < 128; i++)
-	{
-		printf(" + ");
-		gf_dump(p[i]);
-		printf(" * x^%d", i);
-	}
-
-	printf(")");
 }
 
