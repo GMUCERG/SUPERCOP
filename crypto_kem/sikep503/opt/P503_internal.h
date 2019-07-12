@@ -7,7 +7,7 @@
 #ifndef __P503_INTERNAL_H__
 #define __P503_INTERNAL_H__
 
-#include "api.h"
+#include "config.h"
 
 #if (TARGET == TARGET_AMD64)
     #define NWORDS_FIELD    8               // Number of words of a 503-bit field element

@@ -4,7 +4,9 @@
 * Abstract: supersingular isogeny parameters and generation of functions for P503
 *********************************************************************************************/  
 
+#include "apiorig.h"
 #include "P503_internal.h"
+#include "crypto_kem.h"
 
 
 // Encoding of field elements, elements over Z_order, elements over GF(p^2) and elliptic curve points:
