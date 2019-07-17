@@ -4,6 +4,7 @@
 #include "api.h"
 #include "randombytes.h"
 #include "threebears.h"
+#include "crypto_kem.h"
 
 int crypto_kem_keypair(
     unsigned char *pk,

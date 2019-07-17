@@ -1,1 +1,1 @@
-../../../common/keccakf1600-asm.s
+../../../common/m4/keccakf1600-asm.s

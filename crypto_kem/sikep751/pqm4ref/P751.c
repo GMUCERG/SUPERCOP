@@ -5,6 +5,8 @@
 *********************************************************************************************/  
 
 #include "P751_internal.h"
+#include "fips202.h"
+#include "crypto_kem.h"
 
 
 // Encoding of field elements, elements over Z_order, elements over GF(p^2) and elliptic curve points:

@@ -1,1 +1,1 @@
-../../../common/fips202.c
+../../../common/pqclean/fips202.c

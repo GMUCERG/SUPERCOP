@@ -1,1 +1,1 @@
-../../../common/fips202.h
+../../../common/mupq/fips202.h

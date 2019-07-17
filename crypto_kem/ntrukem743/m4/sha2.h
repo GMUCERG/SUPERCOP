@@ -1,1 +1,1 @@
-../../../common/sha2.h
+../../../common/mupq/sha2.h

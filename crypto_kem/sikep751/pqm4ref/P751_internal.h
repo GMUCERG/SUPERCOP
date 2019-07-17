@@ -8,7 +8,6 @@
 #define __P751_INTERNAL_H__
 
 #include "apiorig.h" 
-#include "crypto_kem.h"
  
 
 #if (TARGET == TARGET_AMD64)

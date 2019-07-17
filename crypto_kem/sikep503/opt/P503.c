@@ -6,6 +6,7 @@
 
 #include "apiorig.h"
 #include "P503_internal.h"
+#include "fips202.h"
 #include "crypto_kem.h"
 
 

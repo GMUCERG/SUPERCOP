@@ -1,1 +1,1 @@
-../../../common/sha2.c
+../../../common/pqclean/sha2.c

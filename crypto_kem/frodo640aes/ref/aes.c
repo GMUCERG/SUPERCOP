@@ -1,1 +1,1 @@
-../../../common/aes.c
+../../../common/pqclean/aes.c

@@ -1,1 +1,1 @@
-../../../common/sha2.c
+../../../common/mupq/sha2.c

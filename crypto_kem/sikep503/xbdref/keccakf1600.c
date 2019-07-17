@@ -1,1 +1,1 @@
-../../../common/keccakf1600.c
+../../../common/mupq/keccakf1600.c
