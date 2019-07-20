@@ -1,6 +1,6 @@
 #include "poly.h"
 
-void poly_S3_tobytes(unsigned char msg[NTRU_OWCPA_MSGBYTES], const poly *a) {
+void PQCLEAN_NTRUHPS4096821_CLEAN_poly_S3_tobytes(unsigned char msg[NTRU_OWCPA_MSGBYTES], const poly *a) {
     int i;
     unsigned char c;
 
@@ -15,17 +15,17 @@ void poly_S3_tobytes(unsigned char msg[NTRU_OWCPA_MSGBYTES], const poly *a) {
 
 }
 
-void poly_S3_frombytes(poly *r, const unsigned char msg[NTRU_OWCPA_MSGBYTES]) {
+void PQCLEAN_NTRUHPS4096821_CLEAN_poly_S3_frombytes(poly *r, const unsigned char msg[NTRU_OWCPA_MSGBYTES]) {
     int i;
     unsigned char c;
 
     for (i = 0; i < NTRU_PACK_DEG / 5; i++) {
         c = msg[i];
-        r->coeffs[5 * i + 0] = mod3(c);
-        r->coeffs[5 * i + 1] = mod3(c * 171 >> 9); // this is division by 3
-        r->coeffs[5 * i + 2] = mod3(c * 57 >> 9); // division by 3^2
-        r->coeffs[5 * i + 3] = mod3(c * 19 >> 9); // division by 3^3
-        r->coeffs[5 * i + 4] = mod3(c * 203 >> 14); // etc.
+        r->coeffs[5 * i + 0] = PQCLEAN_NTRUHPS4096821_CLEAN_mod3(c);
+        r->coeffs[5 * i + 1] = PQCLEAN_NTRUHPS4096821_CLEAN_mod3(c * 171 >> 9); // this is division by 3
+        r->coeffs[5 * i + 2] = PQCLEAN_NTRUHPS4096821_CLEAN_mod3(c * 57 >> 9); // division by 3^2
+        r->coeffs[5 * i + 3] = PQCLEAN_NTRUHPS4096821_CLEAN_mod3(c * 19 >> 9); // division by 3^3
+        r->coeffs[5 * i + 4] = PQCLEAN_NTRUHPS4096821_CLEAN_mod3(c * 203 >> 14); // etc.
     }
     r->coeffs[NTRU_N - 1] = 0;
 }

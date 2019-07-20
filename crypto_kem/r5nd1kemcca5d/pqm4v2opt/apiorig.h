@@ -1,5 +1,5 @@
-//  apiorig.h
-//  Stub apiorig.h interface for testing. Overwritten for distribution.
+//  api.h
+//  Stub api.h interface for testing. Overwritten for distribution.
 
 //  Copyright (c) 2019, PQSHield Ltd.
 

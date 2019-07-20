@@ -1,1 +1,4 @@
-../../r5nd1kemcca5d/pqm4v2opt/api.h
+#define CRYPTO_SECRETKEYBYTES 828
+#define CRYPTO_PUBLICKEYBYTES 780
+#define CRYPTO_BYTES 24
+#define CRYPTO_CIPHERTEXTBYTES 883

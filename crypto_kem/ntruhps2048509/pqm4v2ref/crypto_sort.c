@@ -16,7 +16,7 @@
         (b) ^= c; \
     } while(0)
 
-void crypto_sort(void *array, long long n) {
+void PQCLEAN_NTRUHPS2048509_CLEAN_crypto_sort(void *array, long long n) {
     long long top, p, q, r, i;
     int32_t *x = array;
 

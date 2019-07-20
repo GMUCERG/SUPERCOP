@@ -1,1 +1,1 @@
-../../../common/pqclean/sp800-185.h
+../../../common/mupq/sp800-185.h

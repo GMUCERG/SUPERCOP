@@ -1,13 +1,1 @@
-//  apiorig.h
-//  Stub apiorig.h interface for testing. Overwritten for distribution.
-
-//  Copyright (c) 2019, PQSHield Ltd.
-
-
-#ifndef _API_H_
-#define _API_H_
-
-#include "r5_parameter_sets.h"
-#include "nist_kem.h"
-
-#endif /* _API_H_ */
+../../r5nd1kemcca5d/pqm4v2opt/apiorig.h
