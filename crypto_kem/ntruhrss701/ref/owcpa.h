@@ -4,18 +4,17 @@
 #include "params.h"
 
 void owcpa_samplemsg(unsigned char msg[NTRU_OWCPA_MSGBYTES],
-                     unsigned char seed[NTRU_SEEDBYTES]);
+                     const unsigned char seed[NTRU_SEEDBYTES]);
 
-void owcpa_keypair(unsigned char *pk, 
-                   unsigned char *sk);
+void owcpa_keypair(unsigned char *pk,
+                   unsigned char *sk,
+                   const unsigned char seed[NTRU_SEEDBYTES]);
 
 void owcpa_enc(unsigned char *c,
-               const unsigned char *m,
-               const unsigned char *pk,
-               const unsigned char *coins);
+               const unsigned char *rm,
+               const unsigned char *pk);
 
-void owcpa_dec(unsigned char *m,
-               const unsigned char *c,
-               const unsigned char *sk);
-
+int owcpa_dec(unsigned char *rm,
+              const unsigned char *c,
+              const unsigned char *sk);
 #endif

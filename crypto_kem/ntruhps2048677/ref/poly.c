@@ -1,5 +1,4 @@
 #include "poly.h"
-#include "fips202.h"
 #include "verify.h"
 
 uint16_t mod3(uint16_t a)

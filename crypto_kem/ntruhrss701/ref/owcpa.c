@@ -1,124 +1,190 @@
 #include "owcpa.h"
+#include "sample.h"
 #include "poly.h"
-#include "randombytes.h"
 
-#define MODQ(X) ((X) & (NTRU_Q-1))
-
-/* Map {0, 1, 2} -> {0,1,q-1} */
-#define ZP_TO_ZQ(C) \
-    (((C) & 1) | ((-((C)>>1)) & (NTRU_Q-1)));
-
-static void pack_pk(unsigned char *r, const poly *pk)
+static int owcpa_check_r(const poly *r)
 {
-  poly_Rq_tobytes(r, pk);
-}
-
-static void unpack_pk(poly *pk, const unsigned char *packedpk)
-{
-  poly_Rq_frombytes(pk, packedpk);
-}
-
-static void pack_ciphertext(unsigned char *r, const poly *c)
-{
-  poly_Rq_tobytes(r, c);
-}
-
-static void unpack_ciphertext(poly *c, const unsigned char *packedct)
-{
-  poly_Rq_frombytes(c, packedct);
-}
-
-static void pack_sk(unsigned char *r, const poly *f, const poly *finv3)
-{
-  poly_S3_tobytes(r, f);
-  poly_S3_tobytes(r+NTRU_PACK_TRINARY_BYTES, finv3);
-}
-
-static void unpack_sk(poly *f, poly *finv3, const unsigned char *packedsk)
-{
+  /* Check that r is in message space. */
+  /* Note: Assumes that r has coefficients in {0, 1, ..., q-1} */
   int i;
-  poly_S3_frombytes(f, packedsk);
-  poly_S3_frombytes(finv3, packedsk+NTRU_PACK_TRINARY_BYTES);
-
-  /* Lift coeffs of f from Z_p to Z_q */
+  uint64_t t = 0;
+  uint16_t c;
   for(i=0; i<NTRU_N; i++)
-    f->coeffs[i] = (f->coeffs[i] & 1) | ((-(f->coeffs[i]>>1)) & (NTRU_Q-1));
+  {
+    c = MODQ(r->coeffs[i]+1);
+    t |= c & (NTRU_Q-4);  /* 0 if c is in {0,1,2,3} */
+    t |= (c + 1) & 0x4;   /* 0 if c is in {0,1,2} */
+  }
+  t |= r->coeffs[NTRU_N-1]; /* Coefficient n-1 must be zero */
+  t = (-t) >> 63;
+  return t;
 }
 
-void owcpa_samplemsg(unsigned char msg[NTRU_OWCPA_MSGBYTES], unsigned char seed[NTRU_SEEDBYTES])
+#ifdef NTRU_HPS
+static int owcpa_check_m(const poly *m)
 {
-  poly m;
-  poly_S3_sample(&m,seed,0);
-  poly_S3_tobytes(msg, &m);
+  /* Check that m is in message space. */
+  /* Note: Assumes that m has coefficients in {0,1,2}. */
+  int i;
+  uint64_t t = 0;
+  uint16_t p1 = 0;
+  uint16_t m1 = 0;
+  for(i=0; i<NTRU_N; i++)
+  {
+    p1 += m->coeffs[i] & 0x01;
+    m1 += (m->coeffs[i] & 0x02) >> 1;
+  }
+  /* Need p1 = m1 and p1 + m1 = NTRU_WEIGHT */
+  t |= p1 ^ m1;
+  t |= (p1 + m1) ^ NTRU_WEIGHT;
+  t = (-t) >> 63;
+  return t;
+}
+#endif
+
+void owcpa_samplemsg(unsigned char msg[NTRU_OWCPA_MSGBYTES],
+                     const unsigned char seed[NTRU_SAMPLE_RM_BYTES])
+{
+  poly r, m;
+
+  sample_rm(&r, &m, seed);
+
+  poly_S3_tobytes(msg, &r);
+  poly_S3_tobytes(msg+NTRU_PACK_TRINARY_BYTES, &m);
 }
 
 void owcpa_keypair(unsigned char *pk,
-                   unsigned char *sk)
+                   unsigned char *sk,
+                   const unsigned char seed[NTRU_SAMPLE_FG_BYTES])
 {
   int i;
-  unsigned char seed[NTRU_SEEDBYTES];
-  poly p1, p2, p3; // for somewhat more efficient stack usage
-  poly *f = &p1, *fi3 = &p2, *fiq = &p1, *g = &p2, *h = &p3, *r1 = &p3;
 
-  randombytes(seed, NTRU_SEEDBYTES);
+  poly x1, x2, x3, x4, x5;
 
-  poly_S3_sample_plus(f,seed,1);
+  poly *f=&x1, *invf_mod3=&x2;
+  poly *g=&x3, *G=&x2;
+  poly *Gf=&x3, *invGf=&x4, *tmp=&x5;
+  poly *invh=&x3, *h=&x3;
 
-  poly_S3_inv(fi3, f);
+  sample_fg(f,g,seed);
 
-  /* Pack sk before constructing pk */
-  pack_sk(sk, f, fi3);
+  poly_S3_inv(invf_mod3, f);
+  poly_S3_tobytes(sk, f);
+  poly_S3_tobytes(sk+NTRU_PACK_TRINARY_BYTES, invf_mod3);
 
   /* Lift coeffs of f and g from Z_p to Z_q */
-  for(i=0; i<NTRU_N; i++)
-    f->coeffs[i] = ZP_TO_ZQ(f->coeffs[i]);
+  poly_Z3_to_Zq(f);
+  poly_Z3_to_Zq(g);
 
-  poly_S3_sample_plus(g,seed,2);
+#ifdef NTRU_HRSS
+  /* G = 3*(x-1)*g */
+  poly_Rq_mul_x_minus_1(G, g);
   for(i=0; i<NTRU_N; i++)
-    g->coeffs[i] = ZP_TO_ZQ(g->coeffs[i]);
+    G->coeffs[i] = MODQ(3 * G->coeffs[i]);
+#endif
 
-  poly_Rq_inv(fiq, f);
-  poly_Rq_mul(r1, g, fiq);
-  poly_Rq_mul_xm1(h, r1);
+#ifdef NTRU_HPS
+  /* G = 3*g */
   for(i=0; i<NTRU_N; i++)
-    h->coeffs[i] = MODQ(3 * h->coeffs[i]);
+    G->coeffs[i] = MODQ(3 * g->coeffs[i]);
+#endif
 
-  pack_pk(pk, h);
+  poly_Rq_mul(Gf, G, f);
+
+  poly_Rq_inv(invGf, Gf);
+
+  poly_Rq_mul(tmp, invGf, f);
+  poly_Sq_mul(invh, tmp, f);
+  poly_Sq_tobytes(sk+2*NTRU_PACK_TRINARY_BYTES, invh);
+
+  poly_Rq_mul(tmp, invGf, G);
+  poly_Rq_mul(h, tmp, G);
+  poly_Rq_sum_zero_tobytes(pk, h);
 }
 
 
 void owcpa_enc(unsigned char *c,
-               const unsigned char *m,
-               const unsigned char *pk,
-               const unsigned char *coins)
+               const unsigned char *rm,
+               const unsigned char *pk)
 {
   int i;
-  poly h, b, r, ct;
+  poly x1, x2, x3;
+  poly *h = &x1, *liftm = &x1;
+  poly *r = &x2, *m = &x2;
+  poly *ct = &x3;
 
-  unpack_pk(&h, pk);
+  poly_Rq_sum_zero_frombytes(h, pk);
 
-  poly_Rq_getnoise(&r, coins, 0);
-  poly_Rq_mul(&ct, &r, &h);
-  poly_Rq_frommsg(&b, m);
+  poly_S3_frombytes(r, rm);
+  poly_Z3_to_Zq(r);
+
+  poly_Rq_mul(ct, r, h);
+
+  poly_S3_frombytes(m, rm+NTRU_PACK_TRINARY_BYTES);
+  poly_lift(liftm, m);
   for(i=0; i<NTRU_N; i++)
-    ct.coeffs[i] = MODQ(ct.coeffs[i] + b.coeffs[i]);
+    ct->coeffs[i] = MODQ(ct->coeffs[i] + liftm->coeffs[i]);
 
-  pack_ciphertext(c, &ct);
+  poly_Rq_sum_zero_tobytes(c, ct);
 }
 
-
-void owcpa_dec(unsigned char *m,
-               const unsigned char *c,
-               const unsigned char *sk)
+int owcpa_dec(unsigned char *rm,
+              const unsigned char *ciphertext,
+              const unsigned char *secretkey)
 {
-  poly ct, f, finv3, r1, r2;
+  int i;
+  int fail;
+  poly x1, x2, x3, x4;
 
-  unpack_ciphertext(&ct, c);
-  unpack_sk(&f, &finv3, sk);
+  poly *c = &x1, *f = &x2, *cf = &x3;
+  poly *mf = &x2, *finv3 = &x3, *m = &x4;
+  poly *liftm = &x2, *invh = &x3, *r = &x4;
+  poly *b = &x1;
 
-  poly_Rq_mul(&r1, &ct, &f);
-  poly_Rq_to_S3(&r2, &r1);
-  poly_S3_mul(&r1, &r2, &finv3);
+  poly_Rq_sum_zero_frombytes(c, ciphertext);
+  poly_S3_frombytes(f, secretkey);
+  poly_Z3_to_Zq(f);
 
-  poly_S3_tomsg(m, &r1);
+  poly_Rq_mul(cf, c, f);
+  poly_Rq_to_S3(mf, cf);
+
+  poly_S3_frombytes(finv3, secretkey+NTRU_PACK_TRINARY_BYTES);
+  poly_S3_mul(m, mf, finv3);
+  poly_S3_tobytes(rm+NTRU_PACK_TRINARY_BYTES, m);
+
+  /* NOTE: For the IND-CCA2 KEM we must ensure that c = Enc(h, (r,m)).       */
+  /* We can avoid re-computing r*h + Lift(m) as long as we check that        */
+  /* r (defined as b/h mod (q, Phi_n)) and m are in the message space.       */
+  /* (m can take any value in S3 in NTRU_HRSS) */
+  fail = 0;
+#ifdef NTRU_HPS
+  fail |= owcpa_check_m(m);
+#endif
+
+  /* b = c - Lift(m) mod (q, x^n - 1) */
+  poly_lift(liftm, m);
+  for(i=0; i<NTRU_N; i++)
+    b->coeffs[i] = MODQ(c->coeffs[i] - liftm->coeffs[i]);
+
+  /* r = b / h mod (q, Phi_n) */
+  poly_Sq_frombytes(invh, secretkey+2*NTRU_PACK_TRINARY_BYTES);
+  poly_Sq_mul(r, b, invh);
+
+  /* NOTE: Our definition of r as b/h mod (q, Phi_n) follows Figure 4 of     */
+  /*   [Sch18] https://eprint.iacr.org/2018/1174/20181203:032458.            */
+  /* This differs from Figure 10 of Saito--Xagawa--Yamakawa                  */
+  /*   [SXY17] https://eprint.iacr.org/2017/1005/20180516:055500             */
+  /* where r gets a final reduction modulo p.                                */
+  /* We need this change to use Proposition 1 of [Sch18].                    */
+
+  /* Proposition 1 of [Sch18] shows that re-encryption with (r,m) yields c.  */
+  /* if and only if fail==0 after the following call to owcpa_check_r        */
+  /* The procedure given in Fig. 8 of [Sch18] can be skipped because we have */
+  /* c(1) = 0 due to the use of poly_Rq_sum_zero_{to,from}bytes.             */
+  fail |= owcpa_check_r(r);
+
+  poly_trinary_Zq_to_Z3(r);
+  poly_S3_tobytes(rm, r);
+
+  return fail;
 }
