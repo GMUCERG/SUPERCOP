@@ -1,1 +1,1 @@
-../../kyber768/ref/ntt.c
+../../kyber768/pqm4ref/ntt.c

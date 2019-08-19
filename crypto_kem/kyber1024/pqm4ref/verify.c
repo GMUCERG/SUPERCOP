@@ -1,1 +1,1 @@
-../../kyber768/ref/verify.c
+../../kyber768/pqm4ref/verify.c

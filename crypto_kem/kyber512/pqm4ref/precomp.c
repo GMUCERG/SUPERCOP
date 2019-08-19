@@ -1,1 +1,1 @@
-../../kyber768/ref/precomp.c
+../../kyber768/pqm4ref/precomp.c

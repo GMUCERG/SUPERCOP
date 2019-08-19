@@ -1,4 +1,4 @@
-#include "api.h"
+#include "apiorig.h"
 #include "randombytes.h"
 #include "fips202.h"
 #include "params.h"
